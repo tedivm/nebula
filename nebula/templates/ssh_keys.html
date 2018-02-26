@@ -1,0 +1,13 @@
+{% from "macros/ssh_keys.html" import ssh_listing with context %}
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="callout primary">
+  <div class="row column">
+    <h1 class="text-center">SSH Keys</h1>
+    <p class="lead"></p>
+  </div>
+</div>
+
+{{ ssh_listing(admin=none) }}
+{% endblock %}

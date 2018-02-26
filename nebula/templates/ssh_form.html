@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="callout primary">
+    <div class="row column">
+        <h1 class="text-center">New SSH Key</h1>
+        <p class="lead"></p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="large-4 columns">
+        <form action="" method="post">
+          <label> Internal Username
+              {% if isadmin() %}
+                  <p><input type=text name=username value="{{ ssh_info['username'] or session['username'] }}" required></p>
+              {% else %}
+                  <p><input type=text name=username value="{{ ssh_info['username'] or session['username'] }}" disabled="disabled" required></p>
+              {% endif %}
+
+          </label>
+          <label> Key Name
+              <p><input type=text name=key_name value="{{ ssh_info['key_name'] }}"></p>
+          </label>
+          <label> SSH Key (Run "cat ~/.ssh/id_rsa.pub | pbcopy" to copy your public keys into your clipboard and paste it here.)
+              <p><textarea type=text name=ssh_key rows=10>{{ ssh_info['ssh_key'] }}</textarea></p>
+          </label>
+              <p><input type=submit class="button" value=Submit></p>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

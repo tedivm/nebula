@@ -1,0 +1,11 @@
+{% from "macros/servers.html" import server_listing with context %}
+{% extends "layout.html" %}
+{% block content %}
+<div class="callout primary">
+    <div class="row column">
+        <h1 class='text-center'>Server List</h1>
+        <p  class="lead"></p>
+    </div>
+</div>
+{{ server_listing() }}
+{% endblock %}

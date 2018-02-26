@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="callout primary">
+    <div class="row column">
+        <h1 class='text-center'>Login</h1>
+        <p  class="lead"></p>
+    </div>
+</div>
+
+    <div class="row">
+        <div class="large-4 columns">
+            <form action="" method="post">
+              <label> Username
+                <p><input type=text name=username></p>
+              </label>
+              <label> Password
+                <p><input type=password name=password></p>
+              </label>
+                <p><input type=submit class='button' value=Login></p>
+            </form>
+        </div>
+    </div>
+{% endblock %}

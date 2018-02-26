@@ -1,0 +1,214 @@
+{% macro server_listing(admin=none, owner=none) -%}
+
+<div>
+  <div id="confirmationModalStart" class="reveal-modal reveal small" data-reveal aria-labelledby="confirmationModalStartTitle" aria-hidden="true" role="dialog">
+    <h2 class="confirmation_title text-center" id="confirmationModalStartTitle">Server Started</h2>
+    <p class="lead text-center">This action has been queued. Please give it a minute before changes are reflected in the UI.</p>
+  </div>
+
+  <div id="confirmationModalStop" class="reveal-modal reveal small" data-reveal aria-labelledby="confirmationModalStoppedTitle" aria-hidden="true" role="dialog">
+    <h2 class="confirmation_title text-center" id="confirmationModalStoppedTitle">Server Stopped</h2>
+    <p class="lead text-center">This action has been queued. Please give it a minute before changes are reflected in the UI.</p>
+  </div>
+
+  <div id="confirmationModalRestart" class="reveal-modal reveal small" data-reveal aria-labelledby="confirmationModalRestartTitle" aria-hidden="true" role="dialog">
+    <h2 class="confirmation_title text-center" id="confirmationModalRestartTitle">Server Restarted</h2>
+    <p class="lead text-center">This action has been queued. Please give it a minute before changes are reflected in the UI.</p>
+    <p class="text-center">Server restarts in particular can take several minutes before being initialized by AWS.</p>
+  </div>
+
+  <div id="confirmationModalTerminate" class="reveal-modal reveal small" data-reveal aria-labelledby="confirmationModalTerminateTitle" aria-hidden="true" role="dialog">
+    <h2 class="confirmation_title text-center" id="confirmationModalTerminateTitle">Server Terminated</h2>
+    <p class="lead text-center">This action has been queued. Please give it a minute before changes are reflected in the UI.</p>
+  </div>
+
+  <div id="confirmationModal" class="reveal-modal reveal small" data-reveal aria-labelledby="confirmationModalTitle" aria-hidden="true" role="dialog">
+    <h2 id="confirmationModalTitle">Confirmed.</h2>
+    <p class="lead text-center">This action has been queued. Please give it a minute before changes are reflected in the UI.</p>
+  </div>
+
+  <div id="errorModal" class="reveal-modal reveal small" data-reveal aria-labelledby="errorModalTitle" aria-hidden="true" role="dialog">
+    <h2 id="errorModalTitle text-center">An error has occured.</h2>
+    <p class="lead">Please refresh your browser and try again.</p>
+  </div>
+
+
+  <div id="scheduleShutdownModal" class="reveal-modal reveal small" data-reveal aria-labelledby="scheduleShutdownModalTitle" aria-hidden="true" role="dialog">
+    <h2 id="scheduleShutdownModalTitle" class="text-center">Schedule Shutdown</h2>
+    <div class="row">
+      <div class="large-12 columns">
+        <div class="row collapse">
+          <div class="small-10 columns">
+            <input type="text" class="" value="" id="shutdownTimeSelector">
+          </div>
+          <div class="small-2 columns">
+            <a href="#" class="button postfix" data-close id="shutdownTimeSubmit">Schedule</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="row fullWidth">
+    <div class="large-12 columns">
+        <div class="row columns">
+        </div>
+        <div class="row fullWidth">
+          <table role="grid" class="datatable serverlist">
+            <thead>
+              <tr>
+                <th title="Hours that AWS will bill for since this machine was most recently launched.">Launch</th>
+                <th data-tooltip data-disable-hover="false" class="has-tip" title="Total AWS bill to date accrued by this instance since it was last launched.">Cost</th>
+                {% if admin %}
+                <th>Owner</th>
+                {% endif %}
+                <th>Group</th>
+                <th>Label</th>
+                <th>Instance ID</th>
+                <th>IP</th>
+                <th>Type</th>
+                <th>Disk (GiBs)</th>
+                {% if admin %}
+                <th>AMI</th>
+                {% endif %}
+                <th>Profile</th>
+                <th data-tooltip data-disable-hover="false" class="has-tip" title="Wait until server is 'Live' before using.">Status</th>
+                <th>State</th>
+                <th>Control</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if servers %}
+                {% set pricelist = get_updated_prices() %}
+                {% for server in servers %}
+                {% set tags = get_tags_from_aws_object(server) %}
+                  <tr class="{% if tags.Status != 'Live' %}action-required-instance{% endif %}">
+                    <td>{{ server.launch_time|datetimefilter }}</td>
+                    <td>{{ (as_currency(pricelist[server.instance_type]/3600*instance_seconds_billed(server))) }}</td>
+
+                    {% if admin %}
+                    <td>
+                      <a href="{{url_for('admin_server_listing_owner', owner=tags.User)}}">
+                        {{ tags.User }}
+                      </a>
+                    </td>
+                    {% endif %}
+
+                    {% if tags.Group %}
+                      <td>{{ tags.Group[:8] }}</td>
+                    {% else %}
+                      <td>None</td>
+                    {% endif %}
+
+                    {% if tags.Label %}
+                    <td contenteditable="true" class="serverlabel" id="serverlabel_{{ server.instance_id }}" data-originallabel="{{ tags.Label }}" href="{{url_for('server_label', instance_id=server.instance_id)}}">
+                      {{ tags.Label }}
+                    </td>
+                    {% else %}
+                    <td contenteditable="true" class="serverlabel" id="serverlabel_{{ server.instance_id }}" data-originallabel="{{ tags.Name }}" href="{{url_for('server_label', instance_id=server.instance_id)}}">
+                      {{ tags.Name }}
+                    </td>
+                    {% endif %}
+
+                    <td>{{ server.instance_id }}
+                      <i data-tooltip data-disable-hover="false" data-clipboard-text="{{ server.instance_id }}" title="Copy '{{ server.instance_id }}' to clipboard." class="fa-clipboard fa copy"></i>
+                    </td>
+
+                    <td>{{ server.private_ip_address }}
+                      {% if instance_is_running(server) %}
+                      <i data-tooltip data-disable-hover="false" data-clipboard-text="ssh -A {{ server.private_ip_address }}" title="Copy 'ssh {{ server.private_ip_address }}' to clipboard." class="fa-clipboard fa copy"></i>
+                      {% endif %}
+                    </td>
+
+                    <td>{{ server.instance_type }}</td>
+
+                    <td data-sort="{{ tags.Disk_Space|int }}">{{ tags.Disk_Space }} (${{ (tags.Disk_Space|int * 0.1)|round|int }}/month)</td>
+
+                    {% if admin %}
+                    <td>{{ server.image_id }}</td>
+                    {% endif %}
+
+                    {% set profilelist = tags.Profile.split(' ') %}
+                    <td title='{{ tags.Profile }}'>{{ profilelist[0] }}</td>
+
+                    <td>{{ tags.Status }}</td>
+
+                    {% if admin %}
+                    <td>
+                      {% if owner %}
+                        <a href="{{url_for('admin_server_listing_owner_state', owner=owner, state=server.state.Name)}}">
+                          {{ server.state.Name }}
+                        </a>
+                      {% else %}
+                        <a href="{{url_for('admin_server_listing_state', state=server.state.Name)}}">
+                          {{ server.state.Name }}
+                        </a>
+                      {% endif %}
+                    </td>
+                    {% else %}
+                    <td>{{ server.state.Name }}</td>
+                    {% endif %}
+
+                    <td>
+                      {% if instance_can_start(server) %}
+                        <a href="{{url_for('server_start', instance_id=server.instance_id)}}" data-confirmation-modal='#confirmationModalStart' class="oneclickconfirm">
+                          <i data-tooltip data-disable-hover="false" title='start' class="has-tip fa-play fa"></i>
+                        </a>
+                      {% else %}
+                        <i data-tooltip title='start' class="fa-play fa disabled has-tip"></i>
+                      {% endif %}
+
+                      {% if instance_can_stop(server) %}
+                        <a href="{{url_for('server_stop', instance_id=server.instance_id)}}" data-confirmation-modal='#confirmationModalStop' class="oneclickconfirm">
+                          <i data-tooltip data-disable-hover="false" title='stop' class="has-tip fa-stop fa"></i>
+                        </a>
+                      {% else %}
+                        <i data-tooltip title='stop' class="fa-stop fa disabled has-tip"></i>
+                      {% endif %}
+
+                      {% if instance_can_stop(server) %}
+                        {% if tags.Shutdown and tags.Shutdown|int %}
+                          <i data-tooltip data-disable-hover="false" id="scheduleShutdownButton_{{ server.instance_id }}" data-instanceid="{{ server.instance_id }}" title='schedule' class="has-tip fa-clock-o fa scheduleshutdown alert" data-shutdowntime={{ tags.Shutdown }}></i>
+                        {% else %}
+                          <i data-tooltip data-disable-hover="false" id="scheduleShutdownButton_{{ server.instance_id }}" data-instanceid="{{ server.instance_id }}" title='schedule' class="has-tip fa-clock-o fa scheduleshutdown"></i>
+                        {% endif %}
+                      {% else %}
+                        <i data-tooltip title='schedule' id="scheduleShutdownButton_{{ server.instance_id }}" data-instanceid="{{ server.instance_id }}" class="fa-clock-o fa disabled has-tip scheduleshutdown"></i>
+                      {% endif %}
+
+                      {% if instance_can_restart(server) %}
+                        <a href="{{url_for('server_reboot', instance_id=server.instance_id)}}" data-confirmation-modal='#confirmationModalRestart' class="oneclickconfirm">
+                          <i data-tooltip data-disable-hover="false" title='restart' class="has-tip fa-circle fa"></i>
+                        </a>
+                      {% else %}
+                        <i data-tooltip title='restart' class="fa-circle fa disabled has-tip"></i>
+                      {% endif %}
+
+                      {% if instance_can_terminate(server) %}
+                        <a href="{{url_for('server_terminate', instance_id=server.instance_id)}}">
+                          <i data-tooltip data-disable-hover="false" title='terminate' class="has-tip fa-times fa"></i>
+                        </a>
+                        {% if tags.Group %}
+                        <a href="{{url_for('server_terminate_group', group_id=tags.Group)}}">
+                          <i data-tooltip data-disable-hover="false" title="terminate-group" class="has-tip fa-power-off fa"></i>
+                        </a>
+                        {% endif %}
+                      {% else %}
+                        <i data-tooltip title="terminate" class="fa-times fa disabled has-tip"></i>
+                        {% if tags.Group %}
+                          <i data-tooltip title="terminate-group" class="fa-power-off fa disabled has-tip"></i>
+                        {% endif %}
+                      {% endif %}
+
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+    </div>
+</div>
+{% endmacro %}

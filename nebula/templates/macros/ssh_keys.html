@@ -1,0 +1,50 @@
+{% macro ssh_listing(admin=none) -%}
+
+<div class="row">
+  <div class="large-12 columns">
+    <div class="row columns">
+    </div>
+    <div class="row fullWidth">
+      <table role="grid" class="datatable sshlist">
+        <thead>
+          <tr>
+            <th width="200">Created</th>
+            <th>Owner</th>
+            <th>Key Name</th>
+            <th>SSH Key</th>
+            <th>Control</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if ssh_keys %}
+            {% for key in ssh_keys %}
+              <tr>
+                <td>{{ key.created_at|datetimefilter }}</td>
+                {% if admin %}
+                <td>
+                  <a href="{{url_for('admin_server_listing_owner', owner=key.username)}}">
+                    {{ key.username }}
+                  </a>
+                {% else %}
+                <td>{{ key.username }}</td>
+                {% endif %}
+                <td>{{ key.key_name }}</td>
+                <td class="scrollable">{{ key.ssh_key }}</td>
+                <td>
+                  <a href="{{url_for('ssh_key_update', ssh_key_id=key.id, admin=admin)}}">
+                    <i data-tooltip data-disable-hover="false" title="update" class="has-tip fa-pencil-square-o fa"></i>
+                  </a>
+                  <a href="{{url_for('ssh_key_remove', ssh_key_id=key.id, admin=admin)}}">
+                    <i data-tooltip data-disable-hover="false" title="remove" class="has-tip fa-times fa"></i>
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endmacro %}

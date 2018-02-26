@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="callout primary">
+    <div class="row column">
+        <h1 class='text-center'>Profile Editor</h1>
+        <p  class="lead"></p>
+    </div>
+</div>
+
+
+    <div class="row">
+        <div class="large-4 columns">
+            <form action="" method="post">
+              <label> Name
+                <p><input type=text name=name value="{{ profile['name'] }}" required></p>
+              </label>
+              <label> AMI
+                <p><input type=text name=ami value="{{ profile['ami'] }}" required></p>
+              </label>
+              <label> Userdata (non-encoded)
+                <p><textarea type=text name=userdata rows=10>{{ profile['userdata'] }}</textarea></p>
+              </label>
+                <p><input type=submit class='button' value=Submit></p>
+            </form>
+        </div>
+    </div>
+{% endblock %}

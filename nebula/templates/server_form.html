@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+{% block script %}
+var check_valid_num_instances = function(num_instances) {
+  if (/^\d+$/.test(num_instances) && Number(num_instances) <= 50 && Number(num_instances) > 0) {
+    $('input[name=num_instances]').css('background-color', '');
+    $('input[type=submit]').removeAttr('disabled');
+  } else {
+    $('input[name=num_instances]').css('background-color', 'rgba(250, 147, 18, 0.64)');
+    $('input[type=submit]').attr('disabled', 'disabled');
+  }
+};
+
+$('input[name=num_instances]').on('change paste keyup', function() {
+  check_valid_num_instances($(this).val());
+});
+{% endblock %}
+
+
+{% block content %}
+<div class="callout primary">
+    <div class="row column">
+        <h1 class='text-center'>New Server</h1>
+        <p  class="lead"></p>
+    </div>
+</div>
+
+    <div class="row">
+        <div class="large-4 columns">
+            <form action="" method="post">
+              <label> Profile
+                <select name="profile">
+                  {% for profile in profiles %}
+                  <option value="{{profile.id}}">{{profile.name}}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label> Number of Instances
+                <p><input type=text name=num_instances value="1"></p>
+              </label>
+              <label> Instance Type
+                <select name="instancetype">
+                  {% for instance_type in instance_types %}
+                    {% set description = get_instance_description(instance_type) %}
+                    <option value="{{instance_type}}"{% if instance_type == 't2.micro' %} selected="selected"{% endif %})>{{instance_type}} ({{description.vcpu}} CPUs - {{description.memory}} RAM{% if description.gpu and description.gpu|int > 0 %} - {{description.gpu}} GPUs {% endif %})</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label> Diskspace
+                <select name="size">
+                  <option value="120">120 ($12 a month)</option>
+                  <option value="250">250 ($25 a month)</option>
+                  <option value="500">500 ($50 a month)</option>
+                  <option value="750">750 ($75 a month)</option>
+                  <option value="1000">1000 ($100 a month)</option>
+                  <option value="1250">1250 ($125 a month)</option>
+                  <option value="1500">1500 ($150 a month)</option>
+                  <option value="1750">1750 ($175 a month)</option>
+                  <option value="2000">2000 ($200 a month)</option>
+                </select>
+              </label>
+              <label> Label (optional)
+                <p><input type=text name=label value=""></p>
+              </label>
+              <label> Shutdown Time (optional)
+                <p><input type=text name="shutdownDate" id="shutdowntime" class="shutdowntime" value=""></p>
+                <input type=hidden name="shutdown" id="shutdowntimestamp" value="">
+              </label>
+
+                <p><input type=submit class='button' value=Launch></p>
+            </form>
+        </div>
+    </div>
+{% endblock %}

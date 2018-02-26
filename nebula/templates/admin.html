@@ -1,0 +1,43 @@
+{% from "macros/servers.html" import server_listing with context %}
+{% from "macros/ssh_keys.html" import ssh_listing with context %}
+{% extends "layout.html" %}
+
+{% block script %}
+$('[data-mobile-app-filter-menu] li').click(function () {
+  $(this).siblings().removeClass('is-active');
+  $(this).addClass('is-active');
+});
+
+$('li#server-list').click(function(event) {
+    $('.server-list').show();
+    $('.ssh-list').hide();
+});
+$('li#ssh-list').click(function(event) {
+    $('.server-list').hide();
+    $('.ssh-list').show();
+});
+{% endblock %}
+
+{% block content %}
+
+<div class="callout primary">
+    <div class="row column">
+        <h1 class='text-center'>Admin Dashboard</h1>
+        <p class="lead"></p>
+    </div>
+</div>
+
+<ul class="mobile-app-filter-menu" data-mobile-app-filter-menu>
+  <li class="is-active" id="server-list">Servers</li>
+  <li id="ssh-list">SSH Keys</li>
+</ul>
+
+<div class="server-list">
+    {{ server_listing(admin=true,owner=owner) }}
+</div>
+
+<div class="ssh-list" hidden="true">
+    {{ ssh_listing(admin=true) }}
+</div>
+
+{% endblock %}

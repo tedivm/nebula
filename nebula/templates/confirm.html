@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="callout primary">
+    <div class="row column">
+        <h1 class='text-center'>Confirm</h1>
+        <p  class="lead"></p>
+    </div>
+</div>
+
+<div>
+    <div class="row column text-center">
+        {% if termination_group_metadata %}
+        Terminating this instance group would terminate all the following instances.
+        <hr>
+        <div class="aligned-list">
+            <ul>
+                {% for instance in termination_group_metadata %}
+                    <li>IP Address: {{ instance.private_ip_address}}, Instance ID: {{ instance.id }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <hr>
+        {% endif %}
+        <p  class="lead">Are you sure?</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="large-1 large-centered columns">
+        <form action="" method="post">
+            <input type=submit class='button' value=Confirm>
+        </form>
+    </div>
+</div>
+{% endblock %}

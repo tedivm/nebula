@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="callout primary">
+    <div class="row column">
+        <h1 class='text-center'>Feedback</h1>
+        <p  class="lead"></p>
+    </div>
+</div>
+    <div class="row">
+        <div class="large-4 columns">
+            <form action="" method="post">
+              <label> Topic
+                <p><input type="text" name="topic" value="" required></p>
+              </label>
+              <label> Feedback
+                <p><textarea name="message" value="" required rows="8"></textarea></p>
+              </label>
+              <label> Submit anonymously?
+                <input name="anonymous" type="checkbox" checked>
+              </label>
+                <p><input type=submit class='button' value=Submit></p>
+            </form>
+        </div>
+    </div>
+{% endblock %}

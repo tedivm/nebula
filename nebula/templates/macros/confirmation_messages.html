@@ -1,0 +1,34 @@
+{% macro confirmation_messages() -%}
+  <div>
+    <div id="confirmationModalStart" class="reveal-modal reveal small" data-reveal aria-labelledby="confirmationModalStartTitle" aria-hidden="true" role="dialog">
+      <h2 class="confirmation_title text-center" id="confirmationModalStartTitle">Server Started</h2>
+      <p class="lead text-center">This action has been queued. Please give it a minute before changes are reflected in the UI.</p>
+    </div>
+
+    <div id="confirmationModalStop" class="reveal-modal reveal small" data-reveal aria-labelledby="confirmationModalStoppedTitle" aria-hidden="true" role="dialog">
+      <h2 class="confirmation_title text-center" id="confirmationModalStoppedTitle">Server Stopped</h2>
+      <p class="lead text-center">This action has been queued. Please give it a minute before changes are reflected in the UI.</p>
+    </div>
+
+    <div id="confirmationModalRestart" class="reveal-modal reveal small" data-reveal aria-labelledby="confirmationModalRestartTitle" aria-hidden="true" role="dialog">
+      <h2 class="confirmation_title text-center" id="confirmationModalRestartTitle">Server Restarted</h2>
+      <p class="lead text-center">This action has been queued. Please give it a minute before changes are reflected in the UI.</p>
+      <p>Server restarts in particular can take several minutes before being initialized by AWS.</p>
+    </div>
+
+    <div id="confirmationModalTerminate" class="reveal-modal reveal small" data-reveal aria-labelledby="confirmationModalTerminateTitle" aria-hidden="true" role="dialog">
+      <h2 class="confirmation_title text-center" id="confirmationModalTerminateTitle">Server Terminated</h2>
+      <p class="lead text-center">This action has been queued. Please give it a minute before changes are reflected in the UI.</p>
+    </div>
+
+    <div id="confirmationModal" class="reveal-modal reveal small" data-reveal aria-labelledby="confirmationModalTitle" aria-hidden="true" role="dialog">
+      <h2 id="confirmationModalTitle">Confirmed.</h2>
+      <p class="lead text-center">This action has been queued. Please give it a minute before changes are reflected in the UI.</p>
+    </div>
+
+    <div id="errorModal" class="reveal-modal reveal small" data-reveal aria-labelledby="errorModalTitle" aria-hidden="true" role="dialog">
+      <h2 id="errorModalTitle text-center">An error has occured.</h2>
+      <p class="lead">Please refresh your browser and try again.</p>
+    </div>
+  </div>
+{%- endmacro %}
