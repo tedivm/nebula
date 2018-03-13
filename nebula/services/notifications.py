@@ -9,11 +9,11 @@ from celery.task.schedules import crontab
 from celery.decorators import periodic_task
 
 
-SMTP_DOMAIN = app.config['SMTP_DOMAIN']
-SMTP_USERNAME = app.config['SMTP_USERNAME']
-SMTP_PASSWORD = app.config['SMTP_PASSWORD']
-SMTP_ORIGIN = app.config['SMTP_ORIGIN']
-NOTIFICATION_THRESHOLD = app.config['NOTIFICATION_THRESHOLD']
+SMTP_DOMAIN = app.config.get('SMTP_DOMAIN')
+SMTP_USERNAME = app.config.get('SMTP_USERNAME')
+SMTP_PASSWORD = app.config.get('SMTP_PASSWORD')
+SMTP_ORIGIN = app.config.get('SMTP_ORIGIN')
+NOTIFICATION_THRESHOLD = app.config.get('NOTIFICATION_THRESHOLD', 500)
 
 
 def get_updated_prices():
@@ -82,6 +82,9 @@ def notify_users():
 
 
 def send_notification_email(subject, text, recipient):
+    if not SMTP_DOMAIN or not SMTP_ORIGIN:
+        return False
+
     """Send a notification email over smtp with the specified information."""
     # Prepare email metadata
     msg = email.message.Message()

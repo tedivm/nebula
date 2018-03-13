@@ -1,0 +1,61 @@
+version: "3"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: dockerfile.app
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/app/uwsgi.ini:/app/uwsgi.ini
+      - ./docker/app/prestart.sh:/app/prestart.sh
+      - ./docker/app/SETTINGS:/app/SETTINGS
+      - ./nebula:/app/nebula
+      - ~/.aws/credentials:/home/nebula/.aws/credentials
+      - ~/.aws/config:/home/nebula/.aws/config
+    depends_on:
+      - database
+      - rabbitmq
+
+  worker:
+    build:
+      context: .
+      dockerfile: dockerfile.worker
+    volumes:
+      - ./docker/app/SETTINGS:/app/SETTINGS
+      - ./nebula:/app/nebula
+      - ~/.aws/credentials:/home/nebula/.aws/credentials
+      - ~/.aws/config:/home/nebula/.aws/config
+    depends_on:
+      - database
+      - rabbitmq
+
+  database:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: nebula
+      POSTGRES_PASSWORD: nebula
+      POSTGRES_DB: nebula
+
+  rabbitmq:
+    image: rabbitmq
+
+  ldap:
+    image: osixia/openldap
+    command: --copy-service
+    volumes:
+      - ./docker/ldap/bootstrap.ldif:/container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif:ro
+    environment:
+      LDAP_REMOVE_CONFIG_AFTER_SETUP: "false"
+
+  phpldapadmin:
+    image: osixia/phpldapadmin:latest
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: "ldap"
+      PHPLDAPADMIN_HTTPS: "false"
+    ports:
+      - "8080:80"
+    depends_on:
+      - ldap

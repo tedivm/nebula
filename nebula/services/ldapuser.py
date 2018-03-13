@@ -4,14 +4,12 @@ from nebula.services.cache import cache
 from ldap3 import Server, Connection, ALL
 
 
-@cache.cache(expires=600)
 def is_admin(user):
     if user_in_group(user, app.config['LDAP_BANNED_GROUP']):
         return False
     return user_in_group(user, app.config['LDAP_ADMIN_GROUP'])
 
 
-@cache.cache(expires=600)
 def is_valid_user(user):
     # Banned users are not allowed. Obviously.
     if 'LDAP_BANNED_GROUP' in app.config:
@@ -29,11 +27,12 @@ def is_valid_user(user):
     return False
 
 
-@cache.cache(expires=60)
+# Cache for two seconds to prevent overloading the ldap server.
+@cache.cache(expires=2)
 def user_in_group(user, group):
     conn = get_bound_connection()
     group_search = get_dn_from_group(group)
-    group_object = '(objectclass=%s)' % (app.config['LDAP_GROUP_OBJECT'],)
+    group_object = '(objectclass=%s)' % (app.config['LDAP_GROUP_OBJECT_CLASS'],)
     conn.search(group_search, group_object, attributes=['memberUid'])
     if len(conn.entries) < 1:
         return False
@@ -59,8 +58,10 @@ def authenticate(user, password):
 
     # perform the Bind operation - used to check user password.
     if not c.bind():
+        print('Unable to bind user %s' % (user_dn))
         return False
 
+    print('Checking to see if user %s is valid' % (user_dn))
     # check to see if user is actually a valid user.
     return is_valid_user(user)
 
@@ -70,4 +71,4 @@ def get_dn_from_user(user):
 
 
 def get_dn_from_group(group):
-    return 'cn=%s,%s' % (group, app.config['LDAP_GROUP_BASE'])
+    return '%s=%s,%s' % (app.config['LDAP_GROUP_ATTRIBUTE'], group, app.config['LDAP_GROUP_BASE'])

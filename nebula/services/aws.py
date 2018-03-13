@@ -114,7 +114,7 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
             },
             'DisableApiTermination': False,
             'InstanceInitiatedShutdownBehavior': 'stop',
-            'EbsOptimized': app.config.get('EbsOptimized', False),
+            'EbsOptimized': app.config.get('EBS_OPTIMIZED', False),
             'BlockDeviceMappings': [
                 {
                     'DeviceName': '/dev/sda1',
