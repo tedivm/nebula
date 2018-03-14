@@ -1,5 +1,6 @@
+from celery.schedules import crontab
 from flask import Flask, session, redirect, url_for, escape, request, render_template, flash, send_from_directory
-from nebula import app
+from nebula import app, celery
 from nebula.services import ldapuser
 
 # set the secret key.  keep this really secret:
@@ -18,8 +19,17 @@ import nebula.routes.profiles
 import nebula.routes.servers
 import nebula.routes.ssh_keys
 from nebula.services import aws
-import nebula.services.notifications
+from nebula.services import notifications
 import nebula.services.external_api
+
+
+@celery.on_after_finalize.connect
+def setup_periodic_tasks(sender, **kwargs):
+    sender.add_periodic_task(65.0, aws.shutdown_expired_instances.s(), name='add every 65')
+    sender.add_periodic_task(
+        crontab(hour=4, minute=30),
+        notifications.notify_users.s(),
+    )
 
 
 @app.route('/')

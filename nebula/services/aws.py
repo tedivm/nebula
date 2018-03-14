@@ -8,6 +8,7 @@ from nebula.models import profiles
 import math
 import pytz
 from datetime import datetime
+from time import time
 import uuid
 
 
@@ -201,6 +202,23 @@ def reboot_instance(instance_id):
     print('Rebooting instance %s' % (instance_id,))
     ec2 = get_ec2_client()
     ec2.instances.filter(InstanceIds=[instance_id]).reboot()
+
+
+@celery.task(rate_limit='1/m', expires=60)
+def shutdown_expired_instances():
+    curtimestamp = int(time())
+    instances = get_instance_list(state='running', terminated=False)
+    for instance in instances:
+        print(instance)
+        tags = get_tags_from_aws_object(instance)
+        print('Beginning check of %s' % (instance.instance_id,))
+        if 'Shutdown' in tags and tags['Shutdown'].isdigit():
+            shutdown = int(tags['Shutdown'])
+            print("%s (%s < %s)" % (instance.instance_id, curtimestamp, shutdown))
+            if shutdown <= curtimestamp:
+                print("Shutting down instance %s" % (instance.instance_id))
+                stop_instance.delay(instance.instance_id)
+
 
 
 @celery.task(rate_limit='20/m')

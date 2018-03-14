@@ -17,4 +17,6 @@ RUN touch /home/nebula/.aws/credentials
 RUN touch /home/nebula/.aws/config
 RUN chown -R nebula:nebula /home/nebula/.aws
 
-ENTRYPOINT celery -A nebula.celery worker --loglevel=info --autoscale=10,2
+ADD ./docker/worker/start_worker.sh /home/nebula/start_worker.sh
+
+ENTRYPOINT /home/nebula/start_worker.sh

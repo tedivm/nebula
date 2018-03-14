@@ -5,8 +5,6 @@ import awspricingfull
 from nebula import app, celery
 from nebula.services import aws
 from flask import render_template
-from celery.task.schedules import crontab
-from celery.decorators import periodic_task
 
 
 SMTP_DOMAIN = app.config.get('SMTP_DOMAIN')
@@ -63,6 +61,7 @@ def as_currency(amount):
         return '-${:,.2f}'.format(-amount)
 
 
+@celery.task(rate_limit='1/m', expires=300)
 def notify_users():
     """Notify users of billing information."""
     user_bill = get_total_costs()
