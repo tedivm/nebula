@@ -1,14 +1,10 @@
 # Nebula Dashboard
 
-The nebula dashboard allows users to launch and manage servers from a list of
-predefined profiles setup by their site administrator, giving users control over
-their machines.
+The nebula dashboard allows users to launch and manage servers from a list of predefined profiles setup by their site administrator, giving users control over their machines.
 
-This application has two parts- a web application and a backend worker that
-handled running user commands (such as launching the server).
+This application has two parts- a web application and a backend worker that handled running user commands (such as launching the server).
 
-The majority of data is saved as tags on the instances themselves, with postgres
-being used purely to store server profiles.
+The majority of data is saved as tags on the instances themselves, with postgres being used purely to store server profiles.
 
 Authentication is handled via an ldap server.
 
@@ -20,36 +16,15 @@ Authentication is handled via an ldap server.
 * rabbitmq
 
 ## Development Environment
-To locally deploy the nebula dashboard for development purposes, you will need to setup:
 
-1. Environment Variables
-2. Vagrant Virtual Machine
-3. AWS Credentials
+This project includes a `docker-compose.yaml` file which can be used to launch the development environment.
 
-### Environment Variables
-Ensure that you have a copy of the `nebula/SETTINGS` file and modify the following lines:
+Before running `docker-compose up --build` some configuration is needed-
 
-* `LDAP_BIND_DN = 'uid=ldapbind,CN=users,DC=mm1,DC=ucoffice,DC=example'`: replace `ldapbind` with your username.
-* `LDAP_BIND_PASSWORD = ''`: enter your password inside the empty string.
+1. Edit the AWS section of the configuration file in `./docker/app/SETTINGS` to add your `subnet-id` and `Security Group`.
+2. On your host machine run `aws configure` to create the AWS credentials file, which will be mounted as a volume in the docker containers.
 
-### Vagrant Virtual Machine
-1. Navigate to the root of this project's directory and run `vagrant up` to create a virtual machine with the correct development environment.
-2. SSH into the VM by running `vagrant ssh`
-3. Set up AWS credentials (below) before continuing onto the next step.
-4. Serve the Flask app locally by running `/vagrant/bin/devserve.sh`.
-5. Visit the deployed version at 127.0.0.1:5000.
-
-### AWS Credentials
-Generate your personal AWS IAM access key ID and secret key to configre your [AWS credentials](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-config-files). Inside your Vagrant VM, execute the following:
-
- 1. `sudo apt-get install awscli`
- 2. `aws configure`
- 3. Follow the instructions to enter your access key ID and secret key.
-
-### Miscellaneous
-* Log out of the SSH using `logout`.
-* Shut down the machine using `vagrant halt`.
-* In the scenario that you want to destroy (rather than shut down) a machine, use `vagrant destroy -f`.
+The docker environment creates an LDAP backend specific to this installation with two accounts built in, `admin` and `user` (with the passwords `admin` and `user`).
 
 
 # External API
