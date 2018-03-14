@@ -25,10 +25,11 @@ import nebula.services.external_api
 
 @celery.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(65.0, aws.shutdown_expired_instances.s(), name='add every 65')
+    sender.add_periodic_task(65.0, aws.shutdown_expired_instances.s(), name='AWS Scheduled Shutdowns')
     sender.add_periodic_task(
         crontab(hour=4, minute=30),
         notifications.notify_users.s(),
+        name='AWS Active Machine Notifications'
     )
 
 
