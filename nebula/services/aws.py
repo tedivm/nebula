@@ -164,6 +164,7 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
                 break
             time.sleep(5)
 
+        autolive = app.config.get('AUTOLIVE', False),
         for instance in instances:
             print('Cluster start - tag')
             tags = [
@@ -177,6 +178,8 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
                 tags.append({ 'Key': 'Label', 'Value': label })
             if shutdown:
                 tags.append({ 'Key': 'Shutdown', 'Value': shutdown })
+            if autolive:
+                tags.append({ 'Key': 'Status', 'Value': 'Live' })
             instance.create_tags(Tags=tags)
 
         return True

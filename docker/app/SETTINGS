@@ -2,7 +2,7 @@
 # META
 
 SITE_TITLE = 'nebula'
-
+AUTOLIVE = True
 
 # SECURITY
 
