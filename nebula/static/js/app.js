@@ -180,12 +180,10 @@ function updateServerTable () {
           }
         }
 
-        console.log(instanceIds)
         // Remove instances that are no longer present.
         $('#servertable > tbody > tr').each(function () {
           const row = $(this)
           const instance_id = row.attr('id').split('_')[1]
-          console.log(instance_id)
           if (!instanceIds.includes(instance_id)) {
             row.remove()
           }
@@ -271,7 +269,6 @@ function getNewRow(server, admin=false) {
 
 function getControlPanel(server) {
   const state = server.state
-  console.log(`${server.instance_id} ${server.status}`)
   let controlPanel = ``
 
   // Start
@@ -350,7 +347,11 @@ function timestampToString (timestamp) {
 
 function gmtToLocal (time) {
   const date = new Date(time)
-  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}`
+  let month = date.getMonth() + 1
+  if (month < 10) {
+    month = `0${month}`
+  }
+  return `${date.getFullYear()}-${month}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}`
 }
 
 function filterPast (date) {
