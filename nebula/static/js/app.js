@@ -263,7 +263,7 @@ function getNewRow(server, admin=false) {
   }
 
   output += `
-    ${controlPanel}
+    <td id="control_${server.instance_id}">${controlPanel}</td>
   </tr>`
 
   return output
@@ -272,7 +272,7 @@ function getNewRow(server, admin=false) {
 function getControlPanel(server) {
   const state = server.state
   console.log(`${server.instance_id} ${server.status}`)
-  let controlPanel = `<td id="control_${server.instance_id}">`
+  let controlPanel = ``
 
   // Start
   if (state === 'stopped') {
@@ -335,7 +335,6 @@ function getControlPanel(server) {
     controlPanel += `<i data-tooltip title='terminate-group' class="fa-power-off fa disabled has-tip"></i>`
   }
 
-  controlPanel += '</td>'
   return controlPanel
 }
 
