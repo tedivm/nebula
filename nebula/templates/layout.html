@@ -105,14 +105,6 @@
     {% block js_include %}
     {% endblock %}
     <script>
-      $(document).foundation();
-      new Clipboard('.copy');
-      $('.datatable').DataTable({
-        "paging":   false,
-        "searching":   false,
-        "order": [[ 0, "desc" ]]
-      });
-      $('a.oneclickconfirm').quickConfirm()
       {% block script %}
       {% endblock %}
     </script>

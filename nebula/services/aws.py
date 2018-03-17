@@ -1,5 +1,7 @@
+import awspricingfull
 import boto3
 from botocore.exceptions import ClientError
+import json
 import requests
 from flask import current_app,g
 from nebula import app,celery
@@ -78,6 +80,29 @@ def seconds_billed(instance):
     if seconds < 60:
         return 60
     return seconds
+
+
+def get_cost(instance):
+    seconds = seconds_billed(instance)
+    prices = get_updated_prices()
+    return round(((prices[instance.instance_type] / 3600) * seconds), 2)
+
+@cache.cache()
+def get_updated_prices():
+    """Return a dictionary of updated EC2 Linux instance prices."""
+    ec2_prices = awspricingfull.EC2Prices()
+    price_list = json.loads(ec2_prices.return_json('ondemand'))
+
+    us_west_2_prices = [x for x in price_list['regions'] if x['region'] == 'us-west-2'][0]
+    linux_prices = [x for x in us_west_2_prices['instanceTypes'] if x['os'] == 'linux']
+
+    prices = {}
+    for instance in linux_prices:
+        prices[instance['type']] = instance['price']
+
+    return prices
+
+
 
 
 def get_ec2_client():

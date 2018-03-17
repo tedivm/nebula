@@ -54,9 +54,14 @@
 <div class="row fullWidth">
     <div class="large-12 columns">
         <div class="row columns">
+          {% if admin %}
+          <button id="serverlist_refresh" type="button" class="primary button admin">Refresh</button>
+          {% else %}
+          <button id="serverlist_refresh" type="button" class="primary button">Refresh</button>
+          {% endif %}
         </div>
         <div class="row fullWidth">
-          <table role="grid" class="datatable serverlist">
+          <table role="grid" id='servertable' class="datatable serverlist">
             <thead>
               <tr>
                 <th title="Hours that AWS will bill for since this machine was most recently launched.">Launch</th>
@@ -84,12 +89,12 @@
                 {% set pricelist = get_updated_prices() %}
                 {% for server in servers %}
                 {% set tags = get_tags_from_aws_object(server) %}
-                  <tr class="{% if tags.Status != 'Live' %}action-required-instance{% endif %}">
-                    <td>{{ server.launch_time|datetimefilter }}</td>
-                    <td>{{ (as_currency(pricelist[server.instance_type]/3600*instance_seconds_billed(server))) }}</td>
+                  <tr id="row_{{ server.instance_id }}" class="{% if tags.Status != 'Live' %}action-required-instance{% endif %}">
+                    <td id="launch_{{ server.instance_id }}">{{ server.launch_time|datetimefilter }}</td>
+                    <td id="cost_{{ server.instance_id }}">{{ (as_currency(pricelist[server.instance_type]/3600*instance_seconds_billed(server))) }}</td>
 
                     {% if admin %}
-                    <td>
+                    <td id="user_{{ server.instance_id }}">
                       <a href="{{url_for('admin_server_listing_owner', owner=tags.User)}}">
                         {{ tags.User }}
                       </a>
@@ -97,9 +102,9 @@
                     {% endif %}
 
                     {% if tags.Group %}
-                      <td>{{ tags.Group[:8] }}</td>
+                      <td id="group_{{ server.instance_id }}">{{ tags.Group[:8] }}</td>
                     {% else %}
-                      <td>None</td>
+                      <td id="group_{{ server.instance_id }}">None</td>
                     {% endif %}
 
                     {% if tags.Label %}
@@ -112,31 +117,31 @@
                     </td>
                     {% endif %}
 
-                    <td>{{ server.instance_id }}
+                    <td id="instanceid_{{ server.instance_id }}">{{ server.instance_id }}
                       <i data-tooltip data-disable-hover="false" data-clipboard-text="{{ server.instance_id }}" title="Copy '{{ server.instance_id }}' to clipboard." class="fa-clipboard fa copy"></i>
                     </td>
 
-                    <td>{{ server.private_ip_address }}
+                    <td id="ipaddress_{{ server.instance_id }}">{{ server.private_ip_address }}
                       {% if instance_is_running(server) %}
                       <i data-tooltip data-disable-hover="false" data-clipboard-text="ssh -A {{ server.private_ip_address }}" title="Copy 'ssh {{ server.private_ip_address }}' to clipboard." class="fa-clipboard fa copy"></i>
                       {% endif %}
                     </td>
 
-                    <td>{{ server.instance_type }}</td>
+                    <td id="instancetype_{{ server.instance_id }}">{{ server.instance_type }}</td>
 
-                    <td data-sort="{{ tags.Disk_Space|int }}">{{ tags.Disk_Space }} (${{ (tags.Disk_Space|int * 0.1)|round|int }}/month)</td>
+                    <td id="diskspace_{{ server.instance_id }}" data-sort="{{ tags.Disk_Space|int }}">{{ tags.Disk_Space }} (${{ (tags.Disk_Space|int * 0.1)|round|int }}/month)</td>
 
                     {% if admin %}
-                    <td>{{ server.image_id }}</td>
+                    <td id="image_{{ server.instance_id }}">{{ server.image_id }}</td>
                     {% endif %}
 
                     {% set profilelist = tags.Profile.split(' ') %}
-                    <td title='{{ tags.Profile }}'>{{ profilelist[0] }}</td>
+                    <td id="profile_{{ server.instance_id }}" title='{{ tags.Profile }}'>{{ profilelist[0] }}</td>
 
-                    <td>{{ tags.Status }}</td>
+                    <td id="status_{{ server.instance_id }}">{{ tags.Status }}</td>
 
                     {% if admin %}
-                    <td>
+                    <td id="state_{{ server.instance_id }}">
                       {% if owner %}
                         <a href="{{url_for('admin_server_listing_owner_state', owner=owner, state=server.state.Name)}}">
                           {{ server.state.Name }}
@@ -148,10 +153,10 @@
                       {% endif %}
                     </td>
                     {% else %}
-                    <td>{{ server.state.Name }}</td>
+                    <td id="state_{{ server.instance_id }}">{{ server.state.Name }}</td>
                     {% endif %}
 
-                    <td>
+                    <td id="control_{{ server.instance_id }}">
                       {% if instance_can_start(server) %}
                         <a href="{{url_for('server_start', instance_id=server.instance_id)}}" data-confirmation-modal='#confirmationModalStart' class="oneclickconfirm">
                           <i data-tooltip data-disable-hover="false" title='start' class="has-tip fa-play fa"></i>

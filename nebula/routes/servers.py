@@ -37,6 +37,32 @@ def server_list():
     return render_template("servers.html", servers=servers)
 
 
+@app.route('/servers/index.json')
+@login_required
+def server_list_json():
+    servers = aws.get_instance_list(owner=session['username'], terminated=False)
+    serverlist = []
+    for server in servers:
+        tags = aws.get_tags_from_aws_object(server)
+        serverdata = {
+            'launch': server.launch_time,
+            'cost': aws.get_cost(server),
+            'group': tags.get('Group', False),
+            'label': tags.get('Label', False),
+            'instance_id': server.instance_id,
+            'private_ip_address': server.private_ip_address,
+            'instance_type': server.instance_type,
+            'disk_space': tags.get('Disk_Space', False),
+            'profile': tags.get('Profile', False),
+            'status': tags.get('Status', False),
+            'shutdown': tags.get('shutdown', False),
+            'name': tags.get('Name', False),
+            'state': server.state['Name']
+        }
+        serverlist.append(serverdata)
+    return jsonify(serverlist)
+
+
 @app.route('/servers/<instance_id>/start', methods = ["GET", "POST"])
 @login_required
 def server_start(instance_id):
