@@ -22,5 +22,6 @@
             });
             return this;
         });
+      return this;
     }
 }(jQuery));

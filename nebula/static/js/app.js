@@ -117,6 +117,11 @@ $( document ).ready(function() {
     updateServerTable()
   })
 
+  if ($('#servertable').length > 0) {
+    console.log('Enabling server table updates.')
+    setInterval(rateLimitedUpdateServerTable, (1000 * 5))
+  }
+
   $(document).foundation()
 
   new Clipboard('.copy');
@@ -126,11 +131,36 @@ $( document ).ready(function() {
     "order": [[ 0, "desc" ]]
   });
 
-  $('a.oneclickconfirm').quickConfirm()
-
+  $('a.oneclickconfirm').quickConfirm().click(recordLastActivityTime)
 })
 
+let lastActive = new Date()
+function recordLastActivityTime () {
+  lastActive = new Date()
+}
+
+let lastUpdate = new Date()
+function rateLimitedUpdateServerTable () {
+  const now = new Date()
+
+  const secondsSincelastActivity = Math.abs(now.getTime() - lastActive.getTime()) / 1000
+  let secondsBetweenUpdates = 90
+  if (secondsSincelastActivity < 90) {
+    secondsBetweenUpdates = 10
+  } else if (secondsSincelastActivity < 180) {
+    secondsBetweenUpdates = 60
+  }
+
+  const secondsSinceLastUpdate = Math.abs(now.getTime() - lastUpdate.getTime()) / 1000
+  if (secondsSinceLastUpdate >= secondsBetweenUpdates) {
+    lastUpdate = new Date()
+    updateServerTable()
+  }
+}
+
+
 function updateServerTable () {
+  console.log('Updating Server Table')
   const admin = $('#serverlist_refresh').hasClass('admin')
   const url = admin ? '/admin/servers/index.json' : '/servers/index.json'
   $.ajax(url, {
@@ -174,6 +204,8 @@ function updateServerTable () {
             $(`#cost_${server.instance_id}`).text(server.cost ? `$${server.cost}` : '$0.00')
             $(`#control_${server.instance_id}`).html(getControlPanel(server))
           } else {
+            // Since a new server has been detected we reduce the ratelimiting to get updates.
+            recordLastActivityTime()
             $('#servertable > tbody:last-child').append(getNewRow(server, admin))
             const isEven = $('#servertable > tbody > tr').length % 2 === 0
             $('#servertable > tbody:last-child').addClass(isEven ? 'even' : 'odd')
@@ -207,8 +239,8 @@ function updateServerTable () {
         })
 
       },
-      error: function() {
-          new Foundation.Reveal($('#errorModal')).open()
+      error: function(jqXHR, textStatus, errorThrown) {
+        console.log(`Unable to update server table due to an error: ${textStatus}`)
       }
   })
 }
@@ -276,9 +308,9 @@ function getControlPanel(server) {
     controlPanel += `
           <a href="/servers/${server.instance_id}/start" data-confirmation-modal='#confirmationModalStart' class="oneclickconfirm">
             <i data-tooltip data-disable-hover="false" title='start' class="has-tip fa-play fa"></i>
-          </a>`
+          </a>\n`
   } else {
-    controlPanel += `<i data-tooltip title='start' class="fa-play fa disabled has-tip"></i>`
+    controlPanel += `<i data-tooltip title='start' class="fa-play fa disabled has-tip"></i>\n`
   }
 
   // Stop
@@ -286,20 +318,20 @@ function getControlPanel(server) {
     controlPanel += `
           <a href="/servers/${server.instance_id}/stop" data-confirmation-modal='#confirmationModalStop' class="oneclickconfirm">
             <i data-tooltip data-disable-hover="false" title='stop' class="has-tip fa-stop fa"></i>
-          </a>`
+          </a>\n`
   } else {
-    controlPanel += `<i data-tooltip title='stop' class="fa-stop fa disabled has-tip"></i>`
+    controlPanel += `<i data-tooltip title='stop' class="fa-stop fa disabled has-tip"></i>\n`
   }
 
   // Scedule Shutdown
   if (state === 'running') {
     if (server.shutdown) {
-      controlPanel +=`<i data-tooltip data-disable-hover="false" id="scheduleShutdownButton_${server.instance_id}" data-instanceid="${server.instance_id}" title='schedule' class="has-tip fa-clock-o fa scheduleshutdown alert" data-shutdowntime=${server.shutdown}></i>`
+      controlPanel +=`<i data-tooltip data-disable-hover="false" id="scheduleShutdownButton_${server.instance_id}" data-instanceid="${server.instance_id}" title='schedule' class="has-tip fa-clock-o fa scheduleshutdown alert" data-shutdowntime=${server.shutdown}></i>\n`
     } else {
-      controlPanel +=`<i data-tooltip data-disable-hover="false" id="scheduleShutdownButton_${server.instance_id}" data-instanceid="${server.instance_id}" title='schedule' class="has-tip fa-clock-o fa scheduleshutdown"></i>`
+      controlPanel +=`<i data-tooltip data-disable-hover="false" id="scheduleShutdownButton_${server.instance_id}" data-instanceid="${server.instance_id}" title='schedule' class="has-tip fa-clock-o fa scheduleshutdown"></i>\n`
     }
   } else {
-    controlPanel += `<i data-tooltip title='Schedule Shutdown' class="fa-clock-o fa disabled has-tip"></i>`
+    controlPanel += `<i data-tooltip title='Schedule Shutdown' class="fa-clock-o fa disabled has-tip"></i>\n`
   }
 
   // reboot
@@ -307,9 +339,9 @@ function getControlPanel(server) {
     controlPanel +=`
           <a href="/servers/${server.instance_id}/reboot" data-confirmation-modal='#confirmationModalRestart' class="oneclickconfirm">
             <i data-tooltip data-disable-hover="false" title='restart' class="has-tip fa-circle fa"></i>
-          </a>`
+          </a>\n`
   } else {
-    controlPanel += `<i data-tooltip title='restart' class="fa-circle fa disabled has-tip"></i>`
+    controlPanel += `<i data-tooltip title='restart' class="fa-circle fa disabled has-tip"></i>\n`
   }
 
   // terminate
@@ -317,9 +349,9 @@ function getControlPanel(server) {
     controlPanel +=`
           <a href="/server/${server.instance_id}/terminate">
             <i data-tooltip data-disable-hover="false" title='terminate' class="has-tip fa-times fa"></i>
-          </a>`
+          </a>\n`
   } else {
-    controlPanel += `<i data-tooltip title='terminate' class="fa-times fa disabled has-tip"></i>`
+    controlPanel += `<i data-tooltip title='terminate' class="fa-times fa disabled has-tip"></i>\n`
   }
 
   // terminate group
@@ -327,9 +359,9 @@ function getControlPanel(server) {
     controlPanel +=`
           <a href="/server/${server.group}/terminate/group">
             <i data-tooltip data-disable-hover="false" title="terminate-group" class="has-tip fa-power-off fa"></i>
-          </a>`
+          </a>\n`
   } else {
-    controlPanel += `<i data-tooltip title='terminate-group' class="fa-power-off fa disabled has-tip"></i>`
+    controlPanel += `<i data-tooltip title='terminate-group' class="fa-power-off fa disabled has-tip"></i>\n`
   }
 
   return controlPanel
