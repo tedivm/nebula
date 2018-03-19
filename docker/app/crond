@@ -1,0 +1,4 @@
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Clean sessions (important for file based session storage)
+0 * * * * root /app/bin/maintenance.sh
