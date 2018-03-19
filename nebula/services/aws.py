@@ -10,7 +10,7 @@ from nebula.models import profiles
 import math
 import pytz
 from datetime import datetime
-from time import time
+import time
 import uuid
 
 
@@ -204,21 +204,46 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
         for instance in instances:
             print('Cluster start - tag')
             tags = [
-                { 'Key': 'nebula', 'Value': 'true' },
-                { 'Key': 'User', 'Value': owner },
-                { 'Key': 'Profile', 'Value': profile['name'] },
-                { 'Key': 'Group', 'Value': group_id },
-                { 'Key': 'Disk_Space', 'Value': str(size) }
+                {'Key': 'nebula', 'Value': 'true'},
+                {'Key': 'User', 'Value': owner},
+                {'Key': 'Profile', 'Value': profile['name']},
+                {'Key': 'Group', 'Value': group_id}
             ]
+
+            # Tag network devices- useful for cost exploration.
+            for eni in instance.network_interfaces:
+                print('tagging network interface')
+                eni.create_tags(Tags=tags)
+
+            # Tag attached devices. Volumes initialize slowly so scheduler another task.
+            tag_instance_volumes.delay(instance.instance_id, tags)
+
+            tags.append({'Key': 'Disk_Space', 'Value': str(size)})
             if label:
-                tags.append({ 'Key': 'Label', 'Value': label })
+                tags.append({'Key': 'Label', 'Value': label})
             if shutdown:
-                tags.append({ 'Key': 'Shutdown', 'Value': shutdown })
+                tags.append({'Key': 'Shutdown', 'Value': shutdown})
             if autolive:
-                tags.append({ 'Key': 'Status', 'Value': 'Live' })
+                tags.append({'Key': 'Status', 'Value': 'Live'})
             instance.create_tags(Tags=tags)
 
         return True
+
+
+@celery.task(rate_limit='120/m', expires=3600)
+def tag_instance_volumes(instance_id, tags):
+    print('Tagging instance volumes %s' % (instance_id,))
+    ec2 = get_ec2_client()
+    while True:
+        instance = ec2.Instance(instance_id)
+        if len(instance.block_device_mappings) > 0:
+            for vol in instance.volumes.all():
+                print('tagging volume')
+                vol.create_tags(Tags=tags)
+            return
+        else:
+            print('waiting for volumes to attach')
+            time.sleep(5)
 
 
 @celery.task(rate_limit='20/m', expires=3600)
