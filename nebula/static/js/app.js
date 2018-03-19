@@ -122,17 +122,27 @@ $( document ).ready(function() {
     setInterval(rateLimitedUpdateServerTable, (1000 * 5))
   }
 
+  window.addEventListener('focus', setFocused);
+  window.addEventListener('blur', setBlurred);
+
   $(document).foundation()
 
   new Clipboard('.copy');
-  $('.datatable').DataTable({
-    "paging":   false,
-    "searching":   false,
-    "order": [[ 0, "desc" ]]
-  });
+
+  initializeDataTable()
 
   $('a.oneclickconfirm').quickConfirm().click(recordLastActivityTime)
 })
+
+let isWindowActive = true
+function setFocused () {
+  isWindowActive = true
+}
+
+function setBlurred () {
+  isWindowActive = false
+}
+
 
 let lastActive = new Date()
 function recordLastActivityTime () {
@@ -144,11 +154,11 @@ function rateLimitedUpdateServerTable () {
   const now = new Date()
 
   const secondsSincelastActivity = Math.abs(now.getTime() - lastActive.getTime()) / 1000
-  let secondsBetweenUpdates = 90
+  let secondsBetweenUpdates = isWindowActive ? 90 : 300
   if (secondsSincelastActivity < 90) {
-    secondsBetweenUpdates = 10
+    secondsBetweenUpdates = isWindowActive ? 10 : 45
   } else if (secondsSincelastActivity < 180) {
-    secondsBetweenUpdates = 60
+    secondsBetweenUpdates = isWindowActive ? 30 : 60
   }
 
   const secondsSinceLastUpdate = Math.abs(now.getTime() - lastUpdate.getTime()) / 1000
@@ -158,6 +168,22 @@ function rateLimitedUpdateServerTable () {
   }
 }
 
+let dataTable = false
+function initializeDataTable () {
+  console.log(`initialize tables`)
+  const options = {
+    "paging": false,
+    "searching": false,
+    "destroy": true,
+    "order": [[0, "desc"]]
+  }
+  $.fn.dataTable.ext.errMode = 'none';
+  dataTable = $('.datatable')
+    .on( 'error.dt', function ( e, settings, techNote, message ) {
+        console.log( 'An error has been reported by DataTables: ', message );
+    })
+    .DataTable(options);
+}
 
 function updateServerTable () {
   console.log('Updating Server Table')
@@ -172,7 +198,6 @@ function updateServerTable () {
         for (const server of data) {
           instanceIds.push(server.instance_id)
           if($(`#row_${server.instance_id}`).length) {
-
             if (admin) {
               $(`#state_${server.instance_id}`).html(`<a href="/admin/state/${server.state}">${server.state}</a>`)
             } else {
@@ -203,41 +228,29 @@ function updateServerTable () {
             }
             $(`#cost_${server.instance_id}`).text(server.cost ? `$${server.cost}` : '$0.00')
             $(`#control_${server.instance_id}`).html(getControlPanel(server))
+
+            // Invalidate the dataTable cache for this particular row.
+            dataTable.rows(`#row_${server.instance_id}`).invalidate();
           } else {
             // Since a new server has been detected we reduce the ratelimiting to get updates.
             recordLastActivityTime()
-            $('#servertable > tbody:last-child').append(getNewRow(server, admin))
-            const isEven = $('#servertable > tbody > tr').length % 2 === 0
-            $('#servertable > tbody:last-child').addClass(isEven ? 'even' : 'odd')
+            dataTable.row.add($(getNewRow(server, admin))[0]).draw(false)
           }
         }
 
         // Remove instances that are no longer present.
         $('#servertable > tbody > tr').each(function () {
           const row = $(this)
-          const instance_id = row.attr('id').split('_')[1]
-          if (!instanceIds.includes(instance_id)) {
-            row.remove()
-          }
-        })
-
-        // Format alternating rows differently.
-        let rownum = 0
-        $('#servertable > tbody > tr').each(function () {
-          const row = $(this)
-          const instance_id = row.attr('id').split('_')[1]
-          if (!instanceIds.includes(instance_id)) {
-            row.remove()
-          } else {
-            rownum++
-            if (rownum % 2 === 0) {
-              row.addClass('even').removeClass('odd')
-            } else {
-              row.addClass('odd').removeClass('even')
+          const id = row.attr('id')
+          if (id) {
+            const instance_id = id.split('_')[1]
+            if (!instanceIds.includes(instance_id)) {
+              console.log(`Removing row with instance id ${instance_id}`)
+              row.addClass('remove')
+              dataTable.row('.remove').remove().draw( false );
             }
           }
         })
-
       },
       error: function(jqXHR, textStatus, errorThrown) {
         console.log(`Unable to update server table due to an error: ${textStatus}`)
@@ -250,7 +263,7 @@ function getNewRow(server, admin=false) {
   let output = `
   <tr id="row_${server.instance_id}" class="${!server.status || server.status !== 'Live' ? action-required-instance : ''}">
     <td id="launch_${server.instance_id}">${gmtToLocal(server.launch)}</td>
-    <td id="cost_${server.instance_id}"$${server.cost}</td>
+    <td id="cost_${server.instance_id}">$${server.cost.toFixed(2)}</td>
     `
 
   if (admin) {
@@ -269,10 +282,10 @@ function getNewRow(server, admin=false) {
   output += `
     <td id="group_${server.instance_id}">${server.group ? server.group.substring(0, 8) : ''}</td>
     <td contenteditable="true" class="serverlabel" id="serverlabel_${server.instance_id}" data-originallabel="" href="/server/${server.instance_id}/label">${label}</td>
-    <td id="instanceid_${server.instance_id}">${server.instance_id}<i data-tooltip data-disable-hover="false" data-clipboard-text="${server.instance_id}" title="Copy '${server.instance_id}' to clipboard." class="fa-clipboard fa copy"></i></td>
-    <td id="ipaddress_${server.instance_id}">${server.private_ip_address}<i data-tooltip data-disable-hover="false" data-clipboard-text="ssh -A ${server.private_ip_address}" title="Copy 'ssh ${server.private_ip_address}' to clipboard." class="fa-clipboard fa copy"></i></td>
+    <td id="instanceid_${server.instance_id}">${server.instance_id} <i data-tooltip data-disable-hover="false" data-clipboard-text="${server.instance_id}" title="Copy '${server.instance_id}' to clipboard." class="fa-clipboard fa copy"></i></td>
+    <td id="ipaddress_${server.instance_id}">${server.private_ip_address} <i data-tooltip data-disable-hover="false" data-clipboard-text="ssh -A ${server.private_ip_address}" title="Copy 'ssh ${server.private_ip_address}' to clipboard." class="fa-clipboard fa copy"></i></td>
     <td id="instancetype_${server.instance_id}">${server.instance_type}</td>
-    <td id="diskspace_${server.instance_id}" data-sort="${server.disk_space}">${server.disk_space} (${server.disk_space * 0.1}/month)</td>
+    <td id="diskspace_${server.instance_id}" data-sort="${server.disk_space}">${server.disk_space} ($${server.disk_space * 0.1}/month)</td>
     `
 
   if (admin) {
