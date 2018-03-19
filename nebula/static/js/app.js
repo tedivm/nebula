@@ -172,6 +172,8 @@ function serverSizeLimiter () {
 let isWindowActive = true
 function setFocused () {
   isWindowActive = true
+  updateServerTable()
+  recordLastActivityTime()
 }
 
 function setBlurred () {
@@ -184,7 +186,6 @@ function recordLastActivityTime () {
   lastActive = new Date()
 }
 
-let lastUpdate = new Date()
 function rateLimitedUpdateServerTable () {
   const now = new Date()
 
@@ -220,8 +221,10 @@ function initializeDataTable () {
     .DataTable(options);
 }
 
+let lastUpdate = new Date()
 function updateServerTable () {
   console.log('Updating Server Table')
+  lastUpdate = new Date()
   const admin = $('#serverlist_refresh').hasClass('admin')
   const url = admin ? '/admin/servers/index.json' : '/servers/index.json'
   $.ajax(url, {
