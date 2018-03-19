@@ -92,8 +92,8 @@ def get_updated_prices():
     """Return a dictionary of updated EC2 Linux instance prices."""
     ec2_prices = awspricingfull.EC2Prices()
     price_list = json.loads(ec2_prices.return_json('ondemand'))
-
-    us_west_2_prices = [x for x in price_list['regions'] if x['region'] == 'us-west-2'][0]
+    region = app.config.get('REGION_NAME', 'us-east-1')
+    us_west_2_prices = [x for x in price_list['regions'] if x['region'] == region][0]
     linux_prices = [x for x in us_west_2_prices['instanceTypes'] if x['os'] == 'linux']
 
     prices = {}
@@ -200,11 +200,12 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
                 break
             time.sleep(5)
 
-        autolive = app.config.get('AUTOLIVE', False),
+        autolive = app.config.get('AUTOLIVE', False)
+        sitetag = app.config.get('SITE_TAG', 'nebula')
         for instance in instances:
             print('Cluster start - tag')
             tags = [
-                {'Key': 'nebula', 'Value': 'true'},
+                {'Key': sitetag, 'Value': 'true'},
                 {'Key': 'User', 'Value': owner},
                 {'Key': 'Profile', 'Value': profile['name']},
                 {'Key': 'Group', 'Value': group_id}
@@ -322,7 +323,8 @@ def get_tags_from_aws_object(ec2_object):
 
 def get_instance_list(owner=None, state=False, terminated=True, update_volumes=False):
     ec2 = get_ec2_client()
-    filters = [{'Name':'tag:nebula', 'Values':['true']}]
+    sitetag = app.config.get('SITE_TAG', 'nebula')
+    filters = [{'Name': 'tag:%s' % (sitetag,), 'Values': ['true']}]
 
     if state:
         if isinstance(state, list):
