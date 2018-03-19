@@ -187,6 +187,21 @@ def server_terminate_group(group_id):
     return render_template('confirm.html', termination_group_metadata=instances_metadata)
 
 
+@app.route('/amis/<ami_id>/size.json')
+@login_required
+def ami_image_size(ami_id):
+    return jsonify(aws.get_ami_root_size(ami_id))
+
+
+@app.route('/profiles/<profile_id>/ami.json')
+@login_required
+def profile_ami(profile_id):
+    profile = profiles.get_profile(profile_id)
+    if not profile:
+        abort(404)
+    return jsonify(profile['ami'])
+
+
 def should_allow(instance_id):
     if aws.is_owner(instance_id, session['username']):
         return True

@@ -103,6 +103,17 @@ def get_updated_prices():
     return prices
 
 
+@cache.cache()
+def get_ami_root_size(ami):
+    client = get_ec2_client()
+    image = client.Image(ami)
+    if not image:
+        return False
+    for device in image.block_device_mappings:
+        if device['DeviceName'] == image.root_device_name:
+            if 'Ebs' in device and 'VolumeSize' in device['Ebs']:
+                return device['Ebs']['VolumeSize']
+    return False
 
 
 def get_ec2_client():

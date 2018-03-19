@@ -40,6 +40,11 @@ $( document ).ready(function() {
     }
   })
 
+  if($('#profileSelector').length > 0) {
+    serverSizeLimiter.bind($('#profileSelector'))()
+    $('#profileSelector').change(serverSizeLimiter)
+  }
+
   /*
    * Automatic Shutdown
    */
@@ -133,6 +138,36 @@ $( document ).ready(function() {
 
   $('a.oneclickconfirm').quickConfirm().click(recordLastActivityTime)
 })
+
+function serverSizeLimiter () {
+  const profile_id = $(this).val()
+  $.ajax(`/profiles/${profile_id}/ami.json`, {
+    dataType: 'json',
+    success: function (ami) {
+      $.ajax(`/amis/${ami}/size.json`, {
+        dataType: 'json',
+        success: function (size) {
+          const currentSize = $('#serverSizeSelector').val()
+          let shouldAdjust = currentSize < size
+          $('#serverSizeSelector > option').each(function () {
+            const option = $(this)
+            const val = option.val()
+            if (val < size) {
+              option.prop('disabled', true)
+              option.prop('selected', false)
+            } else {
+              if (shouldAdjust) {
+                shouldAdjust = false
+                option.prop('selected', true)
+              }
+              option.removeAttr('disabled')
+            }
+          })
+        }
+      })
+    }
+  })
+}
 
 let isWindowActive = true
 function setFocused () {
