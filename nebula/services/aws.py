@@ -1,4 +1,3 @@
-import awspricingfull
 import boto3
 from botocore.exceptions import ClientError
 import json
@@ -87,19 +86,15 @@ def get_cost(instance):
     prices = get_updated_prices()
     return round(((prices[instance.instance_type] / 3600) * seconds), 2)
 
+
 @cache.cache()
 def get_updated_prices():
-    """Return a dictionary of updated EC2 Linux instance prices."""
-    ec2_prices = awspricingfull.EC2Prices()
-    price_list = json.loads(ec2_prices.return_json('ondemand'))
-    region = app.config.get('REGION_NAME', 'us-east-1')
-    us_west_2_prices = [x for x in price_list['regions'] if x['region'] == region][0]
-    linux_prices = [x for x in us_west_2_prices['instanceTypes'] if x['os'] == 'linux']
-
+    region = app.config['REGION_NAME']
     prices = {}
-    for instance in linux_prices:
-        prices[instance['type']] = instance['price']
-
+    instance_data = get_instance_descriptions()
+    for type, data in instance_data.items():
+        if region in data['prices']['Linux']:
+            prices[type] = data['prices']['Linux'][region]['Shared']
     return prices
 
 
@@ -271,10 +266,9 @@ def reboot_instance(instance_id):
 
 @celery.task(rate_limit='1/m', expires=60)
 def shutdown_expired_instances():
-    curtimestamp = int(time())
+    curtimestamp = int(datetime.now(pytz.utc).timestamp())
     instances = get_instance_list(state='running', terminated=False)
     for instance in instances:
-        print(instance)
         tags = get_tags_from_aws_object(instance)
         print('Beginning check of %s' % (instance.instance_id,))
         if 'Shutdown' in tags and tags['Shutdown'].isdigit():
@@ -364,7 +358,7 @@ def get_instances_in_group(group_id):
     return list(instances)
 
 
-#@cache.cache()
+@cache.cache()
 def get_instance_types():
     data = get_instance_descriptions()
     instance_types = list(data.keys())

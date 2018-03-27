@@ -1,7 +1,6 @@
 import json
 import smtplib
 import email.message
-import awspricingfull
 from nebula import app, celery
 from nebula.services import aws
 from flask import render_template
@@ -14,24 +13,9 @@ SMTP_ORIGIN = app.config.get('SMTP_ORIGIN')
 NOTIFICATION_THRESHOLD = app.config.get('NOTIFICATION_THRESHOLD', 500)
 
 
-def get_updated_prices():
-    """Return a dictionary of updated EC2 Linux instance prices."""
-    ec2_prices = awspricingfull.EC2Prices()
-    price_list = json.loads(ec2_prices.return_json('ondemand'))
-
-    us_west_2_prices = [x for x in price_list['regions'] if x['region'] == 'us-west-2'][0]
-    linux_prices = [x for x in us_west_2_prices['instanceTypes'] if x['os'] == 'linux']
-
-    prices = {}
-    for instance in linux_prices:
-        prices[instance['type']] = instance['price']
-
-    return prices
-
-
 def get_total_costs():
     """Return a dictionary of total instance uptime and costs by user."""
-    prices = get_updated_prices()
+    prices = aws.get_updated_prices()
     servers = aws.get_instance_list(terminated=False)
 
     user_bill = {}

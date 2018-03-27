@@ -26,7 +26,7 @@ instance_types = aws.get_instance_types()
 app.jinja_env.globals.update(instance_types=instance_types)
 app.jinja_env.globals.update(get_instance_description=aws.get_instance_description)
 app.jinja_env.globals.update(get_tags_from_aws_object=aws.get_tags_from_aws_object)
-app.jinja_env.globals.update(get_updated_prices=notifications.get_updated_prices)
+app.jinja_env.globals.update(get_updated_prices=aws.get_updated_prices)
 app.jinja_env.globals.update(as_currency=notifications.as_currency)
 
 app.jinja_env.globals.update(instance_can_start=aws.can_start)
