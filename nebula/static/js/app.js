@@ -137,6 +137,35 @@ $( document ).ready(function() {
   initializeDataTable()
 
   $('a.oneclickconfirm').quickConfirm().click(recordLastActivityTime)
+
+
+  /*
+   * Profiles
+   */
+  $('table.profilelist a.delete_profile').click(function(event) {
+    const self = $(this)
+    const profileId = $(this).data('profileid')
+    console.log(`Removing profile ${profileId}`)
+    event.preventDefault()
+    $.ajax(this.href, {
+       dataType: 'json',
+       method: 'POST',
+       success: function(data) {
+         console.log(`Removed profile ${profileId}`)
+         $(`#profile_${profileId}`).remove()
+         $('.tooltip').each(function () {
+           const tooltip = $(this)
+           if (tooltip.attr('style')) {
+             tooltip.removeAttr('style')
+           }
+         });
+       },
+       error: function() {
+         var popup = new Foundation.Reveal($('#errorModal'))
+         popup.open();
+       }
+    })
+  })
 })
 
 function serverSizeLimiter () {
