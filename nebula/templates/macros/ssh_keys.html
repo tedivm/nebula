@@ -3,6 +3,9 @@
 <div class="row">
   <div class="large-12 columns">
     <div class="row columns">
+      {% if not admin %}
+      <a href="{{url_for('ssh_key_create')}}" class="button">Add Public SSH Key</a>
+      {% endif %}
     </div>
     <div class="row fullWidth">
       <table role="grid" class="datatable sshlist">

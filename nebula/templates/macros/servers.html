@@ -58,6 +58,7 @@
           <button id="serverlist_refresh" type="button" class="primary button admin">Refresh</button>
           {% else %}
           <button id="serverlist_refresh" type="button" class="primary button">Refresh</button>
+          <a href="{{url_for('server_launch')}}" class="button">Launch Server</a>
           {% endif %}
         </div>
         <div class="row fullWidth">

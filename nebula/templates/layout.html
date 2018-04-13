@@ -50,27 +50,15 @@
                       <i class="fa-list fa"></i>
                       <a href="{{url_for('profiles_list')}}">Profiles</a>
                   </li>
-                  <li>
-                      <i class="fa-plus fa"></i>
-                      <a href="{{url_for('profiles_create')}}">Create Profile</a>
-                  </li>
                 {% endif %}
                 {# Regular logged in user links go here #}
                 <li>
                     <i class="fa-server fa"></i>
-                    <a href="{{url_for('server_list')}}">Your Servers</a>
-                </li>
-                <li>
-                    <i class="fa-play-circle fa"></i>
-                    <a href="{{url_for('server_launch')}}"> Launch Server</a>
-                </li>
-                <li>
-                    <i class="fa-chain fa"></i>
-                    <a href="{{url_for('ssh_key_create')}}">Create New SSH Key</a>
+                    <a href="{{url_for('server_list')}}">Servers</a>
                 </li>
                 <li>
                     <i class="fa-key fa"></i>
-                    <a href="{{url_for('ssh_key_list')}}">Your SSH Keys</a>
+                    <a href="{{url_for('ssh_key_list')}}">SSH Keys</a>
                 </li>
                 {% if config.FEEDBACK_EMAIL %}
                 <li>
