@@ -201,8 +201,10 @@ function serverSizeLimiter () {
 let isWindowActive = true
 function setFocused () {
   isWindowActive = true
-  updateServerTable()
-  recordLastActivityTime()
+  if ($('#servertable').length > 0) {
+    updateServerTable()
+    recordLastActivityTime()    
+  }
 }
 
 function setBlurred () {
