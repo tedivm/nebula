@@ -89,7 +89,7 @@ def get_cost(instance):
 
 @cache.cache()
 def get_updated_prices():
-    region = app.config['REGION_NAME']
+    region = app.config['aws']['region']
     prices = {}
     instance_data = get_instance_descriptions()
     for type, data in instance_data.items():
@@ -115,7 +115,7 @@ def get_ec2_client():
     with app.app_context():
         conn = getattr(g, '_ec2', None)
         if conn is None:
-            g._ec2 = boto3.resource('ec2', region_name=current_app.config['REGION_NAME'])
+            g._ec2 = boto3.resource('ec2', region_name=current_app.config['aws']['region'])
         return g._ec2
 
 
@@ -146,7 +146,7 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
             },
             'DisableApiTermination': False,
             'InstanceInitiatedShutdownBehavior': 'stop',
-            'EbsOptimized': app.config.get('EBS_OPTIMIZED', False),
+            'EbsOptimized': app.config['aws'].get('ebs_optimized', False),
             'BlockDeviceMappings': [
                 {
                     'DeviceName': '/dev/sda1',
@@ -158,19 +158,17 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
             ]
         }
 
-        if 'SUBNET_ID' not in current_app.config:
+        if 'subnets' not in current_app.config['aws']:
             raise ValueError("SUBNET_ID must be saved in configuration")
-        if ',' in current_app.config['SUBNET_ID']:
-            subnets = current_app.config['SUBNET_ID'].split(',')
-        else:
-            subnets = [current_app.config['SUBNET_ID']]
 
-        if 'SECURITY_GROUP_ID' in current_app.config:
-            startArgs['SecurityGroupIds'] = [current_app.config['SECURITY_GROUP_ID']]
+        subnets = current_app.config['aws']['subnets']
 
-        if 'IAM_INSTANCE_PROFILE' in current_app.config:
+        if 'security_group' in current_app.config['aws']:
+            startArgs['SecurityGroupIds'] = [current_app.config['aws']['security_group']]
+
+        if 'iam_instance_profile' in current_app.config['aws']:
             startArgs['IamInstanceProfile'] = {
-                'Arn': current_app.config['IAM_INSTANCE_PROFILE']
+                'Arn': current_app.config['aws']['iam_instance_profile']
             }
 
         ec2 = get_ec2_client()
@@ -195,8 +193,8 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
                 break
             time.sleep(5)
 
-        autolive = app.config.get('AUTOLIVE', False)
-        sitetag = app.config.get('SITE_TAG', 'nebula')
+        autolive = app.config['aws'].get('auto_live', False)
+        sitetag = app.config['general'].get('site_name', 'nebula')
         for instance in instances:
             print('Cluster start - tag')
             tags = [
@@ -317,7 +315,7 @@ def get_tags_from_aws_object(ec2_object):
 
 def get_instance_list(owner=None, state=False, terminated=True, update_volumes=False):
     ec2 = get_ec2_client()
-    sitetag = app.config.get('SITE_TAG', 'nebula')
+    sitetag = app.config['general'].get('site_name', 'nebula')
     filters = [{'Name': 'tag:%s' % (sitetag,), 'Values': ['true']}]
 
     if state:

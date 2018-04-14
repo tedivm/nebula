@@ -1,10 +1,14 @@
 from flask import Flask
+import os
+import yaml
 app = Flask(__name__)
-app.config.from_envvar('SETTINGS')
+
+if 'SETTINGS' in os.environ:
+    with open(os.environ['SETTINGS'], 'r') as stream:
+        app.config.update(yaml.load(stream))
 
 # Initialize Celery
 from celery import Celery
-celery = Celery(__name__, broker=app.config['CELERY_BROKER_URL'], backend=app.config['CELERY_RESULT_URL'])
-
+celery = Celery(__name__, broker=app.config['celery']['broker'], backend=app.config['celery']['results'])
 
 import nebula.nebula

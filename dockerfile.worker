@@ -5,7 +5,7 @@ RUN sed '/^uWSGI/ d' < /app/requirements.txt > /app/requirements_filtered.txt
 WORKDIR /app/
 RUN pip install -r requirements_filtered.txt
 
-ENV SETTINGS /app/SETTINGS
+ENV SETTINGS /app/settings.yaml
 
 ADD ./nebula/ /app/nebula
 

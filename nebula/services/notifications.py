@@ -5,12 +5,13 @@ from nebula import app, celery
 from nebula.services import aws
 from flask import render_template
 
-
-SMTP_DOMAIN = app.config.get('SMTP_DOMAIN')
-SMTP_USERNAME = app.config.get('SMTP_USERNAME')
-SMTP_PASSWORD = app.config.get('SMTP_PASSWORD')
-SMTP_ORIGIN = app.config.get('SMTP_ORIGIN')
-NOTIFICATION_THRESHOLD = app.config.get('NOTIFICATION_THRESHOLD', 500)
+if 'email' in app.config and app.config['email']:
+    SMTP_DOMAIN = app.config['email'].get('domain')
+    SMTP_USERNAME = app.config['email'].get('username')
+    SMTP_PASSWORD = app.config['email'].get('password')
+    SMTP_ORIGIN = app.config['email'].get('email')
+    if 'notifications' in app.config:
+        NOTIFICATION_THRESHOLD = app.config['notifications'].get('threshold', 500)
 
 
 def get_total_costs():
@@ -65,7 +66,7 @@ def notify_users():
 
 
 def send_notification_email(subject, text, recipient):
-    if not SMTP_DOMAIN or not SMTP_ORIGIN:
+    if 'email' not in app.config:
         return False
 
     """Send a notification email over smtp with the specified information."""

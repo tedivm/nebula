@@ -21,11 +21,11 @@ template_anon = '''
 @login_required
 def feedback():
     print('hi')
-    if 'FEEDBACK_EMAIL' not in app.config:
+    if 'feedback' not in app.config or 'email' not in app.config['feedback']:
         abort(404)
 
     if request.method == 'POST':
-        recipient = app.config['FEEDBACK_EMAIL']
+        recipient = app.config['feedback']['email']
         topic = request.form['topic']
         message = request.form['message']
         subject = 'Feedback from nebula: %s' % (topic,)

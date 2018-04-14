@@ -28,6 +28,7 @@ psycopg2==2.7.4
 pyasn1==0.4.2
 python-dateutil==2.6.1
 pytz==2018.3
+PyYAML==3.12
 requests==2.18.4
 Requires==0.0.3
 s3transfer==0.1.13

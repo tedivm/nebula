@@ -2,7 +2,7 @@ from flask import g, request, redirect, url_for, session, make_response
 from nebula import app
 from nebula.services import ldapuser, aws, notifications
 
-app.jinja_env.globals.update(site_title=app.config['SITE_TITLE'])
+app.jinja_env.globals.update(site_title=app.config['general'].get('site_title', 'nebula'))
 
 def isloggedin():
     return 'username' in session

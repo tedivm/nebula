@@ -3,14 +3,13 @@ from flask.sessions import SessionInterface
 from beaker.middleware import SessionMiddleware
 from nebula import app
 
-cache_root = app.config['CACHE_ROOT']
-secret_key = app.config['SECRET_KEY']
+cache_root = app.config['general']['filecache']
 
 session_opts = {
     'session.auto': True,
     'session.cookie_expires': 86400,
     'session.data_dir': cache_root + '/sessions',
-    'session.secret': secret_key,
+    'session.secret': app.secret_key,
     'session.type': 'file',
 }
 

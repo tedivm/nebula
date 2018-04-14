@@ -2,7 +2,7 @@ from beaker.cache import CacheManager
 from beaker.util import parse_cache_config_options
 from nebula import app
 
-cache_root = app.config['CACHE_ROOT']
+cache_root = app.config['general']['filecache']
 
 cache_opts = {
     'cache.type': 'file',

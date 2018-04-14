@@ -8,7 +8,7 @@ from nebula.services import notifications
 
 @app.cli.command()
 def clean_sessions():
-    sessiondir = app.config['CACHE_ROOT'] + '/sessions'
+    sessiondir = app.config['general']['filecache'] + '/sessions'
     for dirpath, dirnames, filenames in os.walk(sessiondir):
         for file in filenames:
             curpath = os.path.join(dirpath, file)
@@ -19,7 +19,7 @@ def clean_sessions():
 
 @app.cli.command()
 def clear_cache():
-    cachedata = app.config['CACHE_ROOT'] + '/data'
+    cachedata = app.config['general']['filecache'] + '/data'
     shutil.rmtree(cachedata)
 
 

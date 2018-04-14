@@ -1,0 +1,57 @@
+
+general:
+  site_name: 'nebula'
+  site_title: 'nebula'
+  secret_key: 'changeme'
+  filecache: "/tmp/cache"
+
+api:
+  ssh_secret: 'changeme'
+
+celery:
+  broker: "amqp://rabbitmq:5672"
+  results: False
+
+postgres:
+  database: 'nebula'
+  username: 'nebula'
+  password: 'nebula'
+  host: 'database'
+
+aws:
+  region: 'us-east-1'
+  ebs_optimized: False
+  subnets:
+    - 'subnet-1fb84b55'
+  security_group: 'sg-7949c70f'
+  auto_live: True
+  # iam_instance_profile:
+
+# LDAP
+ldap:
+  host: 'ldap://ldap'
+  bind_dn: 'cn=admin,dc=example,dc=org'
+  bind_password: 'admin'
+
+  username_attribute: 'cn'
+  user_base: 'ou=users,dc=example,dc=org'
+
+  group_object_class: 'posixGroup'
+  group_attribute: 'cn'
+  group_base: 'ou=groups,dc=example,dc=org'
+
+  banned_group: 'banned'
+  admin_group: 'nebula_admins'
+  user_group: 'nebula_users'
+
+
+
+email:
+#  SMTP_DOMAIN:
+#  SMTP_USERNAME:
+#  SMTP_PASSWORD:
+#  SMTP_EMAIL:
+
+
+notifications:
+#  NOTIFICATION_THRESHOLD:

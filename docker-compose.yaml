@@ -10,7 +10,7 @@ services:
     volumes:
       - ./docker/app/uwsgi.ini:/app/uwsgi.ini
       - ./docker/app/prestart.sh:/app/prestart.sh
-      - ./docker/app/SETTINGS:/app/SETTINGS
+      - ./docker/app/settings.yaml:/app/settings.yaml
       - ./nebula:/app/nebula
       - ~/.aws/credentials:/home/nebula/.aws/credentials
       - ~/.aws/config:/home/nebula/.aws/config
@@ -23,7 +23,7 @@ services:
       context: .
       dockerfile: dockerfile.worker
     volumes:
-      - ./docker/app/SETTINGS:/app/SETTINGS
+      - ./docker/app/settings.yaml:/app/settings.yaml
       - ./nebula:/app/nebula
       - ~/.aws/credentials:/home/nebula/.aws/credentials
       - ~/.aws/config:/home/nebula/.aws/config

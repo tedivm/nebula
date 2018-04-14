@@ -26,8 +26,8 @@ def ssh_key_create():
 @login_required
 def ssh_key_list():
     """Handle GET requests at /ssh/list for a user's SSH keys."""
-    ssh_key_list = ssh_keys.list_ssh_keys(session['username'])
-    return render_template('ssh_keys.html', ssh_keys=ssh_key_list, admin=None)
+    key_list = ssh_keys.list_ssh_keys(session['username'])
+    return render_template('ssh_keys.html', ssh_keys=key_list, admin=None)
 
 
 @app.route('/ssh/<ssh_key_id>/update', methods=['GET', 'POST'])
@@ -76,7 +76,7 @@ def ssh_key_export():
 
     # Verify that request passes in correct shared secret
     if ('sshsecret' not in request.headers or
-       request.headers['sshsecret'] != app.ssh_secret):
+            request.headers['sshsecret'] != app.config['api']['ssh_secret']):
         abort(401)
 
     response = make_response(jsonify(export.collect_all_keys()))

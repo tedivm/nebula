@@ -8,8 +8,10 @@ from psycopg2.extensions import STATUS_BEGIN, STATUS_READY
 def get_conn():
     conn = getattr(g, '_database', None)
     if conn is None:
-        g._database = psycopg2.connect(database=app.config['DB'], user=app.config['DB_USERNAME'],
-                         password=app.config['DB_PASSWORD'], host=app.config['DB_HOST'])
+        g._database = psycopg2.connect(database=app.config['postgres']['database'],
+                                       user=app.config['postgres']['username'],
+                                       password=app.config['postgres']['password'],
+                                       host=app.config['postgres']['host'])
     return g._database
 
 

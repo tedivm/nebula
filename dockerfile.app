@@ -10,9 +10,10 @@ ADD ./docker/app/crond /etc/cron.d/nebula
 
 ENV STATIC_URL /app/nebula/static
 ADD ./docker/app/uwsgi.ini /app/uwsgi.ini
+ADD ./docker/app/get_database.py /app/get_database.py
 ADD ./docker/app/prestart.sh /app/prestart.sh
 
-ENV SETTINGS /app/SETTINGS
+ENV SETTINGS /app/settings.yaml
 
 ADD ./db/ /app/db
 ADD ./nebula/ /app/nebula

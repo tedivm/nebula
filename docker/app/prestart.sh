@@ -1,7 +1,7 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 # Let the DB start
-database=`cat SETTINGS | sed -rn "s/DB_HOST = '(.+)'/\1/p"`
+database=`/app/get_database.py`
 
 echo "Waiting for postgres to be available at host '${database}'"
 while ! pg_isready -h ${database} > /dev/null 2> /dev/null; do
