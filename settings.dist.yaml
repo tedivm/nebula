@@ -1,0 +1,56 @@
+
+general:
+  site_name: 'nebula'
+  site_title: 'nebula'
+  secret_key: 'CHANGE_THIS_PASSWORD'
+  filecache: "/tmp/cache"
+
+api:
+  ssh_secret: 'CHANGE_THIS_PASSWORD'
+
+celery:
+  broker: "amqp://localhost:5672"
+  results: False
+
+postgres:
+  database: 'nebula'
+  username: 'nebula'
+  password: 'nebula'
+  host: 'localhost'
+
+aws:
+  region: 'us-east-1'
+  ebs_optimized: False
+  subnets:
+    - 'subnet-12345678'
+    - 'subnet-23456789'
+    - 'subnet-34567890'
+  security_group: 'sg-12345678'
+  auto_live: True
+  iam_instance_profile: False
+
+ldap:
+  host: 'ldaps://myldaphost'
+  bind_dn: 'cn=admin,dc=example,dc=org'
+  bind_password: ''
+
+  username_attribute: 'cn'
+  user_base: 'ou=users,dc=example,dc=org'
+
+  group_object_class: 'posixGroup'
+  group_attribute: 'cn'
+  group_base: 'ou=groups,dc=example,dc=org'
+
+  banned_group: 'banned'
+  admin_group: 'nebula_admins'
+  user_group: 'nebula_users'
+  api_group: 'nebula_api_users'
+
+email:
+#  host:
+#  username:
+#  password:
+#  email:
+
+notifications:
+#  threshold:
