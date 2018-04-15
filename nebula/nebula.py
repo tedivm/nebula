@@ -1,5 +1,5 @@
 from celery.schedules import crontab
-from flask import Flask, session, redirect, url_for, escape, request, render_template, flash, send_from_directory
+from flask import Flask, session, redirect, url_for, request
 from nebula import app, celery
 from nebula.services import ldapuser
 
@@ -21,6 +21,9 @@ import nebula.routes.servers
 import nebula.routes.ssh_keys
 from nebula.services import aws
 from nebula.services import notifications
+
+if not app.secret_key or app.secret_key is 'CHANGE_THIS_PASSWORD':
+    raise ValueError('The `secret key` setting must be set before the application can run.')
 
 
 @celery.on_after_finalize.connect
