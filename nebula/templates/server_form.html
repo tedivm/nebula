@@ -45,8 +45,12 @@ $('input[name=num_instances]').on('change paste keyup', function() {
                   {% endfor %}
                 </select>
               </label>
-              <label> Diskspace
+              <label> EBS Disk Size
                 <select id="serverSizeSelector" name="size">
+                  <option value="1">1 ($0.10 a month)</option>
+                  <option value="2">2 ($0.20 a month)</option>
+                  <option value="4">4 ($0.40 a month)</option>
+                  <option value="8">8 ($0.80 a month)</option>
                   <option value="10">10 ($1 a month)</option>
                   <option value="20">20 ($2 a month)</option>
                   <option value="40">40 ($4 a month)</option>
