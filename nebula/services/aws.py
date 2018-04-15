@@ -57,8 +57,13 @@ def seconds_billed(instance):
 
 def get_cost(instance):
     seconds = seconds_billed(instance)
+    if seconds < 1:
+        return 0
     prices = get_updated_prices()
-    return round(((prices[instance.instance_type] / 3600) * seconds), 2)
+    cost = round(((prices[instance.instance_type] / 3600) * seconds), 2)
+    if cost < 0.01:
+        cost = 0.01
+    return cost
 
 
 @cache.cache()
@@ -66,9 +71,9 @@ def get_updated_prices():
     region = app.config['aws']['region']
     prices = {}
     instance_data = get_instance_descriptions()
-    for type, data in instance_data.items():
+    for instance_type, data in instance_data.items():
         if region in data['prices']['Linux']:
-            prices[type] = data['prices']['Linux'][region]['Shared']
+            prices[instance_type] = data['prices']['Linux'][region]['Shared']
     return prices
 
 
