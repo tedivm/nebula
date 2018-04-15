@@ -26,6 +26,9 @@ Nebula uses LDAP as its user database.
 
 Users have full control over the Instance Type they launch, with a breakdown of the different features (VCPU, Memory, GPUs) available right in the launch menu.
 
+### Multiple Availability Zone Support
+
+Nebula supports the ability to specify multiple subnets that it can launch into. When instances of a particular type are unavailable in one (the dreaded `INSUFFICIENT_CAPACITY` error) it will continue trying in other subnets until it either launches the instances or runs out of subnets.
 
 ### Instance Blacklist
 
