@@ -73,6 +73,8 @@ def ssh_key_remove(ssh_key_id, admin=None):
 @app.route('/ssh/export')
 def ssh_key_export():
     """Export ssh keys into a downloadable json file."""
+    if 'api' not in app.config or 'ssh_secret' not in app.config['api']:
+        abort(404)
 
     # Verify that request passes in correct shared secret
     if ('sshsecret' not in request.headers or

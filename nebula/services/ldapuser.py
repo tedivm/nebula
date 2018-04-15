@@ -10,6 +10,14 @@ def is_admin(user):
     return user_in_group(user, app.config['ldap']['admin_group'])
 
 
+def is_api_authorized(user):
+    if is_admin(user):
+        return True
+    if 'api_group' not in app.config['ldap']:
+        return False
+    return user_in_group(user, app.config['ldap']['api_group'])
+
+
 def is_valid_user(user):
     # Banned users are not allowed. Obviously.
     if 'banned_group' in app.config['ldap']:
