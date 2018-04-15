@@ -80,7 +80,9 @@
                 <th>AMI</th>
                 {% endif %}
                 <th>Profile</th>
-                <th data-tooltip data-disable-hover="false" class="has-tip" title="Wait until server is 'Live' before using.">Status</th>
+                {% if not config.aws.auto_live %}
+                <th id='server_table_header_status' data-tooltip data-disable-hover="false" class="has-tip" title="Wait until server is 'Live' before using.">Status</th>
+                {% endif %}
                 <th>State</th>
                 <th>Control</th>
               </tr>
@@ -139,7 +141,9 @@
                     {% set profilelist = tags.Profile.split(' ') %}
                     <td id="profile_{{ server.instance_id }}" title='{{ tags.Profile }}'>{{ profilelist[0] }}</td>
 
+                    {% if not config.aws.auto_live %}
                     <td id="status_{{ server.instance_id }}">{{ tags.Status }}</td>
+                    {% endif %}
 
                     {% if admin %}
                     <td id="state_{{ server.instance_id }}">

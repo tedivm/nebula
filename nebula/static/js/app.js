@@ -203,7 +203,7 @@ function setFocused () {
   isWindowActive = true
   if ($('#servertable').length > 0) {
     updateServerTable()
-    recordLastActivityTime()    
+    recordLastActivityTime()
   }
 }
 
@@ -273,7 +273,9 @@ function updateServerTable () {
               $(`#state_${server.instance_id}`).text(server.state)
             }
 
-            $(`#status_${server.instance_id}`).text(server.status ? server.status : '')
+            if ($(`#server_table_header_status`)) {
+              $(`#status_${server.instance_id}`).text(server.status ? server.status : '')
+            }
 
             if (!server.status || server.status !== 'Live') {
               $(`#row_${server.instance_id}`).addClass('action-required-instance')
@@ -365,8 +367,12 @@ function getNewRow(server, admin=false) {
 
   output += `
     <td id="profile_${server.instance_id}" title='${server.profile}'>${server.profile}</td>
-    <td id="status_${server.instance_id}">${server.status ? server.status : ''}</td>
     `
+  if ($(`#server_table_header_status`)) {
+    output += `
+      <td id="status_${server.instance_id}">${server.status ? server.status : ''}</td>
+      `
+  }
 
   if (admin) {
     output += `<td id="state_${server.instance_id}"><a href="/admin/state/${server.state}">${server.state}</a></td>`
