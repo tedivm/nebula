@@ -6,7 +6,7 @@ from nebula.services import aws
 from flask import render_template
 
 if 'email' in app.config and app.config['email']:
-    SMTP_DOMAIN = app.config['email'].get('domain')
+    SMTP_DOMAIN = app.config['email'].get('host')
     SMTP_USERNAME = app.config['email'].get('username')
     SMTP_PASSWORD = app.config['email'].get('password')
     SMTP_ORIGIN = app.config['email'].get('email')
