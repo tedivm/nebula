@@ -27,6 +27,23 @@ aws:
   auto_live: True
   # iam_instance_profile:
 
+  instances:
+    blacklist:
+      - 'c1'
+      - 'c2'
+      - 'c3'
+      - 'cc1'
+      - 'cc2'
+      - 'cg1'
+      - 'cr1'
+      - 'hi1'
+      - 'hs1'
+      - 'm1'
+      - 'm2'
+      - 'm3'
+      - 'r3'
+      - 't1'
+
 # LDAP
 ldap:
   host: 'ldap://ldap'

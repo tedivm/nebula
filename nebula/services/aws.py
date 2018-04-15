@@ -13,32 +13,6 @@ import time
 import uuid
 
 
-# Remove legacy instance types to keep clutter down and prevent people from
-# using inefficiently priced machines.
-filter_families = [
-
-    # High Density Storage
-    'i2',
-    'd2',
-
-    # Legacy Machines
-    'c1',
-    'c2',
-    'c3',
-    'cc1',
-    'cc2',
-    'cg1',
-    'cr1',
-    'hi1',
-    'hs1',
-    'm1',
-    'm2',
-    'm3',
-    'r3',
-    't1',
-]
-
-
 def is_running(instance):
     return instance.state['Name'] == 'running'
 
@@ -161,8 +135,6 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
         if 'subnets' not in current_app.config['aws']:
             raise ValueError("SUBNET_ID must be saved in configuration")
 
-        subnets = current_app.config['aws']['subnets']
-
         if 'security_group' in current_app.config['aws']:
             startArgs['SecurityGroupIds'] = [current_app.config['aws']['security_group']]
 
@@ -174,6 +146,7 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
         ec2 = get_ec2_client()
 
         # Attempt on all available subnets
+        subnets = current_app.config['aws']['subnets'][:]
         while True:
             startArgs['SubnetId'] = subnets.pop(0)
             try:
@@ -358,15 +331,24 @@ def get_instances_in_group(group_id):
 
 @cache.cache()
 def get_instance_types():
+    if 'instances' in app.config['aws']:
+        instance_conf = app.config['aws']['instances']
+    else:
+        instance_conf = {}
+
     data = get_instance_descriptions()
     instance_types = list(data.keys())
 
     filtered = []
-
     for instance_type in instance_types:
         instance_family = instance_type.split('.')[0]
-        if instance_family not in filter_families:
-            filtered.append(instance_type)
+        if 'whitelist' in instance_conf:
+            if instance_family not in instance_conf['whitelist']:
+                continue
+        if 'blacklist' in instance_conf:
+            if instance_family in instance_conf['blacklist']:
+                continue
+        filtered.append(instance_type)
 
     filtered.sort()
     return filtered
