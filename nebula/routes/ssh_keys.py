@@ -76,6 +76,9 @@ def ssh_key_export():
     if 'api' not in app.config or 'ssh_secret' not in app.config['api']:
         abort(404)
 
+    if app.config['api']['ssh_secret'] is 'CHANGE_THIS_PASSWORD':
+        abort(500)
+
     # Verify that request passes in correct shared secret
     if ('sshsecret' not in request.headers or
             request.headers['sshsecret'] != app.config['api']['ssh_secret']):
