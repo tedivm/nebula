@@ -122,7 +122,9 @@ $( document ).ready(function() {
     updateServerTable()
   })
 
-  // Stop all servers by clicking the button.
+  /*
+   * Shut down all servers with one button
+   */
   $('#serverlist_stopall').click(function () {
     const url = '/servers/index.json'
     $.ajax(url, {
@@ -140,7 +142,14 @@ $( document ).ready(function() {
         }
       }
     })
+    recordLastActivityTime()
+    actionSuccess()
   })
+
+
+  /*
+   * Shut down all servers with one button
+   */
 
   if ($('#servertable').length > 0) {
     console.log('Enabling server table updates.')
@@ -152,10 +161,21 @@ $( document ).ready(function() {
 
   $(document).foundation()
 
+
+  /*
+   * Initialize any "click to copy" buttons.
+   */
   new Clipboard('.copy');
 
+  /*
+   * Initialize any Datatables (page agnostic)
+   */
   initializeDataTable()
 
+
+  /*
+   * Initialize any 'quickConfirm' actions.
+   */
   $('a.oneclickconfirm').quickConfirm().click(recordLastActivityTime)
 
 
@@ -187,6 +207,22 @@ $( document ).ready(function() {
     })
   })
 })
+
+function actionSuccess () {
+  modal = $(this.self).data('confirmationModal')
+  if (!modal) {
+      modal = '#confirmationModal'
+  }
+  const jqmodal = $('#actionSuccessModal')
+  const popup = new Foundation.Reveal(jqmodal);
+  popup.open();
+  setTimeout(function () {
+    const popup = new Foundation.Reveal(jqmodal);
+    popup.close()
+    $('.reveal-overlay').remove()
+  }, 2500)
+
+}
 
 function serverSizeLimiter () {
   const profile_id = $(this).val()
@@ -231,7 +267,6 @@ function setBlurred () {
   isWindowActive = false
 }
 
-
 let lastActive = new Date()
 function recordLastActivityTime () {
   lastActive = new Date()
@@ -270,6 +305,7 @@ function initializeDataTable () {
         console.log( 'An error has been reported by DataTables: ', message );
     })
     .DataTable(options);
+  $('a.oneclickconfirm').quickConfirm().click(recordLastActivityTime)
 }
 
 let lastUpdate = new Date()
@@ -342,6 +378,10 @@ function updateServerTable () {
             }
           }
         })
+
+        // Attach new listeners to the one click confirm system.
+        console.log('new listeners')
+        $('a.oneclickconfirm').quickConfirm().click(recordLastActivityTime)
       },
       error: function(jqXHR, textStatus, errorThrown) {
         console.log(`Unable to update server table due to an error: ${textStatus}`)
@@ -433,7 +473,7 @@ function getControlPanel(server) {
 
   // Scedule Shutdown
   if (state === 'running') {
-    if (server.shutdown) {
+    if (server.shutdown && server.shutdown > 0) {
       controlPanel +=`<i data-tooltip data-disable-hover="false" id="scheduleShutdownButton_${server.instance_id}" data-instanceid="${server.instance_id}" title='schedule' class="has-tip fa-clock-o fa scheduleshutdown alert" data-shutdowntime=${server.shutdown}></i>\n`
     } else {
       controlPanel +=`<i data-tooltip data-disable-hover="false" id="scheduleShutdownButton_${server.instance_id}" data-instanceid="${server.instance_id}" title='schedule' class="has-tip fa-clock-o fa scheduleshutdown"></i>\n`

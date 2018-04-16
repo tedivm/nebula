@@ -1,6 +1,14 @@
 {% macro server_listing(admin=none, owner=none) -%}
 
 <div>
+
+  <div id="actionSuccessModal" class="reveal-modal reveal small" data-reveal aria-labelledby="actionModalTitle" aria-hidden="true" role="dialog">
+    <h2 class="confirmation_title text-center" id="actionModalTitle">Success!</h2>
+    <p class="lead text-center">This action has been queued. Please give it a minute before changes are reflected in the UI.</p>
+  </div>
+
+
+
   <div id="confirmationModalStart" class="reveal-modal reveal small" data-reveal aria-labelledby="confirmationModalStartTitle" aria-hidden="true" role="dialog">
     <h2 class="confirmation_title text-center" id="confirmationModalStartTitle">Server Started</h2>
     <p class="lead text-center">This action has been queued. Please give it a minute before changes are reflected in the UI.</p>
