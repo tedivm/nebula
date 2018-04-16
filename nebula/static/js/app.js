@@ -71,26 +71,7 @@ $( document ).ready(function() {
     }
   })
 
-  $('i.scheduleshutdown').click(function () {
-    const icon = $(this)
-    const instanceid = icon.data('instanceid')
-    const shutdowntimestamp = icon.data('shutdowntime')
-    console.log(`Currently scheduled to shutdown ${instanceid} at ${shutdowntimestamp}`)
-    let shutdowntime = ''
-    if (Number.isInteger(shutdowntimestamp)) {
-      shutdowntime = timestampToString(shutdowntimestamp)
-    }
-
-    var popup = new Foundation.Reveal($('#scheduleShutdownModal')).open()
-    $('#shutdownTimeSelector').val(shutdowntime)
-    $('#shutdownTimeSelector').data('instanceid', instanceid)
-    $('#shutdownTimeSelector').fdatepicker({
-      format: 'mm-dd-yyyy hh:ii',
-      disableDblClickSelection: true,
-      pickTime: true,
-      onRender: filterPast
-    });
-  })
+  $('i.scheduleshutdown').click(scheduleShutdownAction)
 
   $('#shutdownTimeSubmit').click(function () {
     const instanceid = $('#shutdownTimeSelector').data('instanceid')
@@ -207,6 +188,27 @@ $( document ).ready(function() {
     })
   })
 })
+
+function scheduleShutdownAction () {
+  const icon = $(this)
+  const instanceid = icon.data('instanceid')
+  const shutdowntimestamp = icon.data('shutdowntime')
+  console.log(`Currently scheduled to shutdown ${instanceid} at ${shutdowntimestamp}`)
+  let shutdowntime = ''
+  if (Number.isInteger(shutdowntimestamp)) {
+    shutdowntime = timestampToString(shutdowntimestamp)
+  }
+
+  var popup = new Foundation.Reveal($('#scheduleShutdownModal')).open()
+  $('#shutdownTimeSelector').val(shutdowntime)
+  $('#shutdownTimeSelector').data('instanceid', instanceid)
+  $('#shutdownTimeSelector').fdatepicker({
+    format: 'mm-dd-yyyy hh:ii',
+    disableDblClickSelection: true,
+    pickTime: true,
+    onRender: filterPast
+  });
+}
 
 function actionSuccess () {
   modal = $(this.self).data('confirmationModal')
@@ -382,6 +384,7 @@ function updateServerTable () {
         // Attach new listeners to the one click confirm system.
         console.log('new listeners')
         $('a.oneclickconfirm').quickConfirm().click(recordLastActivityTime)
+        $('i.scheduleshutdown').off().click(scheduleShutdownAction)
       },
       error: function(jqXHR, textStatus, errorThrown) {
         console.log(`Unable to update server table due to an error: ${textStatus}`)
