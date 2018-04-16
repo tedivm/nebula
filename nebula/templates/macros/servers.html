@@ -141,7 +141,11 @@
 
                     <td id="instancetype_{{ server.instance_id }}">{{ server.instance_type }}</td>
 
+                    {% if tags.Disk_Space|int * 0.1 < 1 %}
+                    <td id="diskspace_{{ server.instance_id }}" data-sort="{{ tags.Disk_Space|int }}">{{ tags.Disk_Space }} (${{ (tags.Disk_Space|int * 0.1) }}/month)</td>
+                    {% else %}
                     <td id="diskspace_{{ server.instance_id }}" data-sort="{{ tags.Disk_Space|int }}">{{ tags.Disk_Space }} (${{ (tags.Disk_Space|int * 0.1)|round|int }}/month)</td>
+                    {% endif %}
 
                     {% if admin %}
                     <td id="image_{{ server.instance_id }}">{{ server.image_id }}</td>
