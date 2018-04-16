@@ -12,6 +12,8 @@ The Nebula dashboard integrates into an organization's existing LDAP structure w
 
 Nebula also saves the Ops team from having to deal with SSH keys by letting users manage them on their own.
 
+![Nebula Dashboard](/docs/images/server_launch.png)
+
 ## Documentation
 
 If you're looking for the documentation look no further than the [Nebula Wiki](https://github.com/tedivm/nebula/wiki).
@@ -28,9 +30,11 @@ Nebula uses LDAP as its user database.
 
 Users have full control over the Instance Type they launch, with a breakdown of the different features (VCPU, Memory, GPUs) available right in the launch menu.
 
+
 ### Multiple Availability Zone Support
 
 Nebula supports the ability to specify multiple subnets that it can launch into. When instances of a particular type are unavailable in one (the dreaded `INSUFFICIENT_CAPACITY` error) it will continue trying in other subnets until it either launches the instances or runs out of subnets.
+
 
 ### Instance Blacklist
 
@@ -62,6 +66,8 @@ Launch profiles can have their AMI updated automated using the [Profiles API](ht
 ### Autoupdating Instance Metadata
 
 Instance data is pulled from the [ec2details API](https://tedivm.github.io/ec2details/), so new instances and updates pricing information are available to Nebula without having to update the project itself. The ec2details API itself is populated directly from the [AWS Bulk API](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/using-ppslong.html).
+
+![Server Selection](/docs/images/server_selection.png)
 
 
 ### AWS Cost Explorer Integration
