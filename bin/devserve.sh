@@ -8,6 +8,10 @@ else
   DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 fi
 
-source $DIR/envvar
+if [ -z "$FLASK_APP" ]
+then
+      source $DIR/envvar
+fi
 
+export FLASK_DEBUG=1
 flask run --host 0.0.0.0

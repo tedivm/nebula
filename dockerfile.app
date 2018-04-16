@@ -14,6 +14,7 @@ ADD ./docker/app/get_database.py /app/get_database.py
 ADD ./docker/app/prestart.sh /app/prestart.sh
 
 ENV SETTINGS /app/settings.yaml
+ENV FLASK_APP /app/nebula/nebula.py
 
 ADD ./db/ /app/db
 ADD ./nebula/ /app/nebula

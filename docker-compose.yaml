@@ -7,6 +7,7 @@ services:
       dockerfile: dockerfile.app
     ports:
       - "80:80"
+      - "5000:5000"
     volumes:
       - ./docker/app/uwsgi.ini:/app/uwsgi.ini
       - ./docker/app/prestart.sh:/app/prestart.sh
