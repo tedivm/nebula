@@ -2,6 +2,8 @@
 
 The Nebula project lets users manage their own machines on AWS utilizing profiles defined by your Ops team.
 
+![Nebula Dashboard](/docs/images/server_listing.png)
+
 ## Why?
 
 In an organization that wants to give its developers and researchers access to AWS instances the typical process involves creating IAM roles, adding new IAM users, and then training those users on the AWS Console or providing them with command line tools. This can be burdensome to say the least.
