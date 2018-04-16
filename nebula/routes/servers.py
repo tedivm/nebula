@@ -6,7 +6,6 @@ from nebula.models import profiles
 from nebula.services import aws
 from nebula.services import ldapuser
 
-
 @app.route('/servers/launch', methods=["GET", "POST"])
 @login_required
 def server_launch():
@@ -55,7 +54,7 @@ def server_list_json():
             'disk_space': tags.get('Disk_Space', False),
             'profile': tags.get('Profile', False),
             'status': tags.get('Status', False),
-            'shutdown': tags.get('shutdown', False),
+            'shutdown': tags.get('Shutdown', False),
             'name': tags.get('Name', False),
             'state': server.state['Name']
         }
@@ -100,13 +99,13 @@ def server_schedule_stop(instance_id):
         abort(404)
     if request.method == 'POST':
         if 'stoptime' not in request.form:
+            app.logger.info('stoptime not in request')
             abort(400)
-        if not isinstance(request.form['stoptime'], int):
+        stoptime = int(request.form['stoptime'])
+        if stoptime <= 0:
+            app.logger.info('stoptime is less than zero')
             abort(400)
-        if len(request.form['stoptime']) <= 0:
-            abort(400)
-        stoptime = request.form['stoptime']
-        aws.tag_instance.delay(instance_id, 'Shutdown', stoptime)
+        aws.tag_instance.delay(instance_id, 'Shutdown', request.form['stoptime'])
         if request_wants_json():
             return jsonify(True)
         else:
