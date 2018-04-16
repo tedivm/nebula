@@ -122,6 +122,26 @@ $( document ).ready(function() {
     updateServerTable()
   })
 
+  // Stop all servers by clicking the button.
+  $('#serverlist_stopall').click(function () {
+    const url = '/servers/index.json'
+    $.ajax(url, {
+      dataType: 'json',
+      success: function(data) {
+        const instanceIds = []
+        // Add or update rows in the instance table.
+        for (const server of data) {
+          instanceIds.push(server.instance_id)
+          if (server.state !== 'stopped') {
+            $.ajax(`/servers/${server.instance_id}/stop`, {
+                method: 'POST'
+            })
+          }
+        }
+      }
+    })
+  })
+
   if ($('#servertable').length > 0) {
     console.log('Enabling server table updates.')
     setInterval(rateLimitedUpdateServerTable, (1000 * 5))
