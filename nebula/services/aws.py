@@ -336,7 +336,7 @@ def get_instances_in_group(group_id):
 
 @cache.cache()
 def get_instance_types():
-    if 'instances' in app.config['aws']:
+    if 'aws' in app.config and 'instances' in app.config['aws']:
         instance_conf = app.config['aws']['instances']
     else:
         instance_conf = {}

@@ -5,7 +5,9 @@ from nebula.services import ldapuser
 
 # set the secret key.  keep this really secret:
 app.secret_key = app.config['general']['secret_key']
-app.ssh_secret = app.config['api']['ssh_secret']
+
+if 'api' in app.config:
+    app.ssh_secret = app.config['api']['ssh_secret']
 
 import nebula.services.session
 import nebula.extensions.jinja

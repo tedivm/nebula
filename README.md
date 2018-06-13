@@ -69,6 +69,10 @@ Instance data is pulled from the [ec2details API](https://tedivm.github.io/ec2de
 
 ![Server Selection](/docs/images/server_selection.png)
 
+### AWS Secrets Manager Support
+
+Nebula can load its entire configuration from the AWS Secrets Manager, making it even easier to deploay Nebula as a container.
+
 
 ### AWS Cost Explorer Integration
 
