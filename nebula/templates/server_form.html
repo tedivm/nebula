@@ -41,29 +41,29 @@ $('input[name=num_instances]').on('change paste keyup', function() {
                 <select id="instanceTypeSelector" name="instancetype">
                   {% for instance_type in instance_types %}
                     {% set description = get_instance_description(instance_type) %}
-                    <option value="{{instance_type}}"{% if instance_type == 't2.micro' %} selected="selected"{% endif %})>{{instance_type}} ({{description.vcpu}} CPUs - {{description.memory}} RAM{% if description.gpu and description.gpu|int > 0 %} - {{description.gpu}} GPUs {% endif %})</option>
+                    <option value="{{instance_type}}"{% if instance_type == 't2.micro' %} selected="selected"{% endif %})>{{instance_type}} (${{description.price}}/hour - {{description.vcpu}} CPUs - {{description.memory}} RAM{% if description.gpu and description.gpu|int > 0 %} - {{description.gpu}} GPUs {% endif %})</option>
                   {% endfor %}
                 </select>
               </label>
               <label> EBS Disk Size
                 <select id="serverSizeSelector" name="size">
-                  <option value="1">1 ($0.10 a month)</option>
-                  <option value="2">2 ($0.20 a month)</option>
-                  <option value="4">4 ($0.40 a month)</option>
-                  <option value="8">8 ($0.80 a month)</option>
-                  <option value="10">10 ($1 a month)</option>
-                  <option value="20">20 ($2 a month)</option>
-                  <option value="40">40 ($4 a month)</option>
-                  <option value="80">80 ($8 a month)</option>
-                  <option value="120">120 ($12 a month)</option>
-                  <option value="250">250 ($25 a month)</option>
-                  <option value="500">500 ($50 a month)</option>
-                  <option value="750">750 ($75 a month)</option>
-                  <option value="1000">1000 ($100 a month)</option>
-                  <option value="1250">1250 ($125 a month)</option>
-                  <option value="1500">1500 ($150 a month)</option>
-                  <option value="1750">1750 ($175 a month)</option>
-                  <option value="2000">2000 ($200 a month)</option>
+                  <option value="1">1 ($0.10/month)</option>
+                  <option value="2">2 ($0.20/month)</option>
+                  <option value="4">4 ($0.40/month)</option>
+                  <option value="8">8 ($0.80/month)</option>
+                  <option value="10">10 ($1/month)</option>
+                  <option value="20">20 ($2/month)</option>
+                  <option value="40">40 ($4/month)</option>
+                  <option value="80">80 ($8/month)</option>
+                  <option value="120">120 ($12/month)</option>
+                  <option value="250">250 ($25/month)</option>
+                  <option value="500">500 ($50/month)</option>
+                  <option value="750">750 ($75/month)</option>
+                  <option value="1000">1000 ($100/month)</option>
+                  <option value="1250">1250 ($125/month)</option>
+                  <option value="1500">1500 ($150/month)</option>
+                  <option value="1750">1750 ($175/month)</option>
+                  <option value="2000">2000 ($200/month)</option>
                 </select>
               </label>
               <label> Label (optional)

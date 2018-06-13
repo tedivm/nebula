@@ -391,6 +391,8 @@ def get_instance_types():
 def get_instance_description(instance_type):
     descriptions = get_instance_descriptions()
     if instance_type in descriptions:
+        costs = get_updated_prices()
+        descriptions[instance_type]['price'] = costs[instance_type]
         return descriptions[instance_type]
     return False
 
