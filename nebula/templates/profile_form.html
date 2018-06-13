@@ -16,7 +16,13 @@
                 <p><input type=text name=name value="{{ profile['name'] }}" required></p>
               </label>
               <label> AMI
-                <p><input type=text name=ami value="{{ profile['ami'] }}" required></p>
+                <p><input type=text name=ami value="{{ profile['ami'] }}"></p>
+              </label>
+              <label> AMI Owner
+                <p><input type=text name=owner value="{{ profile['owner'] }}"></p>
+              </label>
+              <label> AMI Filter
+                <p><textarea type=text name=filter rows=10>{{ profile['filter'] }}</textarea></p>
               </label>
               <label> Userdata (non-encoded)
                 <p><textarea type=text name=userdata rows=10>{{ profile['userdata'] }}</textarea></p>

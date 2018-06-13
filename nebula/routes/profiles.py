@@ -9,9 +9,11 @@ from nebula.models import profiles
 def profiles_create():
     if request.method == 'POST':
         name = request.form['name']
-        ami = request.form['ami']
+        ami = request.form.get('ami', None)
+        owner = request.form.get('owner', None)
+        filter = request.form.get('filter', None)
         userdata = request.form.get('userdata', None)
-        profiles.create_profile(name, ami, userdata)
+        profiles.create_profile(name, ami, owner, filter, userdata)
         return redirect(url_for('profiles_list'))
     return render_template("profile_form.html", profile={})
 
@@ -20,11 +22,14 @@ def profiles_create():
 @admin_required
 def profiles_update(profile_id):
     profile = profiles.get_profile(profile_id)
+    print(profile)
     if request.method == 'POST':
         name = request.form.get('name', profile['name'])
         ami = request.form.get('ami', profile['ami'])
+        owner = request.form.get('owner', profile['owner'])
+        filter = request.form.get('filter', profile['filter'])
         userdata = request.form.get('userdata', None)
-        profiles.update_profile(profile_id, name, ami, userdata)
+        profiles.update_profile(profile_id, name, ami, owner, filter, userdata)
         return redirect(url_for('profiles_list'))
     return render_template("profile_form.html", profile=profile)
 

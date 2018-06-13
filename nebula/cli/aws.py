@@ -19,6 +19,12 @@ def shutdown_expired_instances():
 
 
 @app.cli.command()
+@click.argument('profile_id')
+def get_profile_ami(profile_id):
+    print(aws.get_ami_from_profile(profile_id))
+
+
+@app.cli.command()
 @click.argument('settings_path')
 @click.argument('secret_name')
 def config_to_aws_sm(settings_path, secret_name):

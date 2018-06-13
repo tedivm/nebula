@@ -195,10 +195,7 @@ def ami_image_size(ami_id):
 @app.route('/profiles/<profile_id>/ami.json')
 @login_required
 def profile_ami(profile_id):
-    profile = profiles.get_profile(profile_id)
-    if not profile:
-        abort(404)
-    return jsonify(profile['ami'])
+    return jsonify(aws.get_ami_from_profile(profile_id))
 
 
 def should_allow(instance_id):

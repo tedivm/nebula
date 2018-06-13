@@ -1,5 +1,6 @@
 import boto3
 from botocore.exceptions import ClientError
+from dateutil import parser
 import json
 import requests
 from flask import current_app,g
@@ -103,6 +104,34 @@ def generate_group_id():
     return uuid.uuid4().hex
 
 
+def get_ami_from_profile(profile_id):
+    with app.app_context():
+        profile = profiles.get_profile(profile_id)
+
+        if 'ami' in profile and profile['ami']:
+            return profile['ami']
+
+        client = boto3.client('ec2', region_name=current_app.config['aws']['region'])
+        filters = json.loads(profile['filter'])
+        if 'owner' in profile:
+            response = client.describe_images(Owners=[profile['owner']], Filters=filters)
+        else:
+            response = client.describe_images(Filters=filters)
+
+        if 'Images' not in response:
+            raise LookupError('Unable to find AMI with required filters')
+
+        response['Images']
+        latest = None
+        for image in response['Images']:
+            if not latest:
+                latest = image
+                continue
+            if parser.parse(image['CreationDate']) > parser.parse(latest['CreationDate']):
+                latest = image
+        return latest['ImageId']
+
+
 @celery.task(rate_limit='20/m', expires=300, acks_late=False)
 def launch_instance(group_id, profile_id, instancetype, owner, size=120, label = False, shutdown = False):
 
@@ -111,7 +140,7 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
         profile = profiles.get_profile(profile_id)
         print('Launching %s for %s with profile "%s"' % (instancetype, owner, profile))
         userdata = profile['userdata']
-        ImageID = profile['ami']
+        ImageID = get_ami_from_profile(profile_id)
 
         startArgs = {
             'DryRun': False,
