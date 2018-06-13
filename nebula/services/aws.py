@@ -12,6 +12,7 @@ import pytz
 from datetime import datetime
 import time
 import uuid
+import yaml
 
 
 def is_running(instance):
@@ -104,6 +105,7 @@ def generate_group_id():
     return uuid.uuid4().hex
 
 
+@cache.cache(expire=60)
 def get_ami_from_profile(profile_id):
     with app.app_context():
         profile = profiles.get_profile(profile_id)
@@ -112,7 +114,7 @@ def get_ami_from_profile(profile_id):
             return profile['ami']
 
         client = boto3.client('ec2', region_name=current_app.config['aws']['region'])
-        filters = json.loads(profile['filter'])
+        filters = yaml.load(profile['filter'])
         if 'owner' in profile:
             response = client.describe_images(Owners=[profile['owner']], Filters=filters)
         else:
