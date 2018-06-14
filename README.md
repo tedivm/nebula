@@ -21,6 +21,16 @@ If you're looking for the documentation look no further than the [Nebula Wiki](h
 
 ## Features
 
+### Easily Defined System Profiles
+
+Admins can create "Profiles" that their users can then launch machines from. These profiles define the AMI and [User Data](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/bootstrap_container_instance.html) that are used by Nebula to launch the individual instances.
+
+
+### AMI Filters
+
+Admins can choose to give profiles either a direct AMI to launch or a set of filters and owner id which Nebula can use to find an AMI (in the event that multiple AMIs match the filters the most recently created one will be used).
+
+
 ### LDAP Integration
 
 Nebula uses LDAP as its user database.
