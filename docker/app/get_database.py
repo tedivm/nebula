@@ -3,6 +3,7 @@ import boto3
 import os
 import requests
 import json
+import yaml
 
 if 'AWS_SECRETS_SETTINGS' in os.environ:
     aws_secret_name = os.environ['AWS_SECRETS_SETTINGS']
