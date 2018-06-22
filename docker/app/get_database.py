@@ -31,6 +31,7 @@ if 'AWS_SECRETS_SETTINGS' in os.environ:
     print(settings['postgres']['host'])
 
 elif 'SETTINGS' in os.environ:
-    with open(os.environ['SETTINGS'], 'r') as stream:
-        settings = yaml.load(stream)
-        print(settings['postgres']['host'])
+    if os.path.isfile(os.environ['SETTINGS']):
+        with open(os.environ['SETTINGS'], 'r') as stream:
+            settings = yaml.load(stream)
+            print(settings['postgres']['host'])
