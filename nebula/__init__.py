@@ -1,5 +1,6 @@
 from flask import Flask
 import os
+import requests
 import yaml
 app = Flask(__name__)
 
@@ -10,11 +11,12 @@ if 'SETTINGS' in os.environ:
     else:
         print('Unable to open settings file %s' % (os.environ['SETTINGS']))
 
-def get_secret(secret_name):
+def get_secret(secret_name, region):
     import boto3
     import json
     client = boto3.client(
-        service_name='secretsmanager'
+        service_name='secretsmanager',
+        region_name=region
     )
 
     # Decrypted secret using the associated KMS CMK
@@ -31,8 +33,16 @@ def get_secret(secret_name):
 # with file based config to provide some (but not all) settings. Can't be used
 # with the AWS Concole- the config must by uploaded using the API.
 if 'AWS_SECRETS_SETTINGS' in os.environ:
-    #from nebula.services import aws
-    aws_config = get_secret(os.environ['AWS_SECRETS_SETTINGS'])
+    aws_secret_name = os.environ['AWS_SECRETS_SETTINGS']
+    if 'AWS_SECRETS_REGION' in os.environ:
+        aws_region = os.environ['AWS_SECRETS_REGION']
+    else:
+        r = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document')
+        r.raise_for_status()
+        data = r.json()
+        aws_region = data['region']
+
+    aws_config = get_secret(aws_secret_name, aws_region)
     app.config.update(aws_config)
 
 # If enabled in the existing (typically file based) settings then some specific

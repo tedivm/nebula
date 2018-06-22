@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
-
+import boto3
 import os
-import yaml
+import requests
+import json
 
 if 'AWS_SECRETS_SETTINGS' in os.environ:
-    import boto3
-    import json
+    aws_secret_name = os.environ['AWS_SECRETS_SETTINGS']
+    if 'AWS_SECRETS_REGION' in os.environ:
+        aws_region = os.environ['AWS_SECRETS_REGION']
+    else:
+        r = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document')
+        r.raise_for_status()
+        data = r.json()
+        aws_region = data['region']
+
     client = boto3.client(
-        service_name='secretsmanager'
+        service_name='secretsmanager',
+        region_name=aws_region
     )
 
     # Decrypted secret using the associated KMS CMK
