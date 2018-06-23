@@ -4,16 +4,16 @@ import requests
 import yaml
 app = Flask(__name__)
 
-if 'SETTINGS' in os.environ:
-    if os.path.isfile(os.environ['SETTINGS']):
-        with open(os.environ['SETTINGS'], 'r') as stream:
-            app.config.update(yaml.load(stream))
-    else:
-        print('Unable to open settings file %s' % (os.environ['SETTINGS']))
-
-def get_secret(secret_name, region):
+def get_secret(secret_name):
     import boto3
     import json
+    if 'AWS_SECRETS_REGION' in os.environ:
+        region = os.environ['AWS_SECRETS_REGION']
+    else:
+        r = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document')
+        r.raise_for_status()
+        data = r.json()
+        region = data['region']
     client = boto3.client(
         service_name='secretsmanager',
         region_name=region
@@ -29,20 +29,20 @@ def get_secret(secret_name, region):
     return yaml.load(secret)
 
 
+if 'SETTINGS' in os.environ:
+    if os.path.isfile(os.environ['SETTINGS']):
+        with open(os.environ['SETTINGS'], 'r') as stream:
+            app.config.update(yaml.load(stream))
+    else:
+        print('Unable to open settings file %s' % (os.environ['SETTINGS']))
+
+
 # Can be used to store entire config in AWS Secrets Manager, or can be combined
 # with file based config to provide some (but not all) settings. Can't be used
 # with the AWS Concole- the config must by uploaded using the API.
 if 'AWS_SECRETS_SETTINGS' in os.environ:
     aws_secret_name = os.environ['AWS_SECRETS_SETTINGS']
-    if 'AWS_SECRETS_REGION' in os.environ:
-        aws_region = os.environ['AWS_SECRETS_REGION']
-    else:
-        r = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document')
-        r.raise_for_status()
-        data = r.json()
-        aws_region = data['region']
-
-    aws_config = get_secret(aws_secret_name, aws_region)
+    aws_config = get_secret(aws_secret_name)
     app.config.update(aws_config)
 
 # If enabled in the existing (typically file based) settings then some specific
