@@ -12,6 +12,7 @@ def get_secret(secret_name):
     if 'AWS_SECRETS_REGION' in os.environ:
         region = os.environ['AWS_SECRETS_REGION']
     else:
+        import requests
         r = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document')
         r.raise_for_status()
         data = r.json()
