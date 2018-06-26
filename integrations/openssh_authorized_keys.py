@@ -7,11 +7,10 @@ import sys
 import ssl
 import os
 
-nebulus_host = 'https://example.com/ssh/export'
+nebula_host = 'https://example.com'
 sshsecret = ''
 
 def get_keys(ignore_ssl = False):
-    url = nebulus_host
     user_agent = 'openssh authorized keys command'
     headers = {'User-Agent': user_agent, 'sshsecret': sshsecret}
 
@@ -22,7 +21,8 @@ def get_keys(ignore_ssl = False):
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
 
-        req = urllib.request.Request(url, headers = headers)
+        export_url = "%s%s" % (nebula_host, '/ssh/export')
+        req = urllib.request.Request(export_url, headers = headers)
         with urllib.request.urlopen(req, context=ctx) as response:
           raw_keys = response.read().decode('utf-8')
           return json.loads(raw_keys)
