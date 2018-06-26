@@ -365,6 +365,13 @@ def get_instances_in_group(group_id):
     return list(instances)
 
 
+def key_normalize(instance_type):
+    family = instance_type.split('.')[0]
+    realcost = get_instance_description(instance_type)['price']
+    price = str(int(realcost * 10000)).zfill(6)
+    return "%s.%s" % (family, price)
+
+
 @cache.cache()
 def get_instance_types():
     if 'aws' in app.config and 'instances' in app.config['aws']:
@@ -386,7 +393,7 @@ def get_instance_types():
                 continue
         filtered.append(instance_type)
 
-    filtered.sort()
+    filtered.sort(key=key_normalize)
     return filtered
 
 
