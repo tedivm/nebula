@@ -180,6 +180,37 @@ $(document).ready(function () {
       }
     })
   })
+
+  /*
+   * Tokens
+   */
+
+  $('table.tokenlist a.delete_token').click(function (event) {
+    const self = $(this)
+    const tokenId = $(this).data('tokenid')
+    console.log(`Removing token ${tokenId}`)
+    event.preventDefault()
+    $.ajax(this.href, {
+      dataType: 'json',
+      method: 'POST',
+      success: function (data) {
+        console.log(`Removed profile ${tokenId}`)
+        $(`#token_${tokenId}`).remove()
+        $('.tooltip').each(function () {
+          const tooltip = $(this)
+          if (tooltip.attr('style')) {
+            tooltip.removeAttr('style')
+          }
+        })
+      },
+      error: function () {
+        var popup = new Foundation.Reveal($('#errorModal'))
+        popup.open()
+      }
+    })
+  })
+
+
 })
 
 function scheduleShutdownAction () {

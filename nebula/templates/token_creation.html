@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="callout primary">
+    <div class="row column">
+        <h1 class='text-center'>New API Token Created</h1>
+        <p  class="lead"></p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="large-8 columns">
+        <table role="grid" class="token_display">
+          <thead>
+            <tr>
+              <th width="200">Token ID</th>
+              <th>Token</th>
+              <th>Instance Token</th>
+            </tr>
+          </thead>
+          <tbody>
+            <td>{{ token_id }}</td>
+            <td>{{ token }}</td>
+            <td>{{ instance_token }}</td>
+          </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

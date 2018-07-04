@@ -13,6 +13,7 @@ import nebula.services.session
 import nebula.extensions.jinja
 import nebula.cli.aws
 import nebula.cli.maintenance
+import nebula.cli.tokens
 import nebula.routes.admin
 import nebula.routes.api
 import nebula.routes.auth
@@ -21,6 +22,7 @@ import nebula.routes.feedback
 import nebula.routes.profiles
 import nebula.routes.servers
 import nebula.routes.ssh_keys
+import nebula.routes.tokens
 from nebula.services import aws
 from nebula.services import notifications
 

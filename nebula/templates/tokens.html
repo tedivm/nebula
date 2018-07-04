@@ -1,0 +1,66 @@
+{% extends "layout.html" %}
+{% block content %}
+<div>
+  <div id="errorModal" class="reveal-modal reveal tiny" data-reveal aria-labelledby="modalTitle" aria-hidden="true" role="dialog">
+    <h2 id="errorModalTitle">An error has occured.</h2>
+    <p class="lead">Please refresh your browser and try again.</p>
+    <a class="close-reveal-modal" aria-label="Close">&#215;</a>
+  </div>
+</div>
+
+<div class="callout primary">
+    <div class="row column">
+        <h1 class='text-center'>API Tokens</h1>
+        <p  class="lead"></p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="large-8 columns">
+      <div class="row columns">
+
+        <form style="float: left; margin-right: 5px" action="{{url_for('token_create')}}" method="POST">
+          <input type="hidden" name="instance_token" value="false">
+          <input type="submit" class="button" value="Create Token" />
+        </form>
+
+        <form action="{{url_for('token_create')}}" method="POST">
+          <input type="hidden" name="instance_token" value="true">
+          <input type="submit" class="button" value="Create Instance Token" />
+        </form>
+
+      </div>
+
+        <div class="row">
+          <table role="grid" class="tokenlist">
+            <thead>
+              <tr>
+                <th width="200">Token ID</th>
+                <th>Instance Token</th>
+                <th>Created</th>
+                <th>Last Used</th>
+                <th>Remove</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if tokens %}
+                {% for token in tokens %}
+                  <tr id="token_{{token.token_id}}">
+                    <td>{{ token.token_id }}</td>
+                    <td>{{ token.instance_token }}</td>
+                    <td>{{ token.created_at|datetimefilter }}</td>
+                    <td>{{ token.last_used|datetimefilter }}</td>
+                    <td>
+                      <a href="{{url_for('token_delete', token_id=token.token_id)}}" data-tokenid="{{token.token_id}}" class="delete_token">
+                        <i data-tooltip data-disable-hover="false" title='Remove Token' class="has-tip fa-times fa"></i>
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
