@@ -6,7 +6,7 @@ from nebula.services import aws, export, ldapuser
 from flask import request, abort, jsonify
 
 
-def ldap_credentials_required(f):
+def api_credentials_required(f):
     """Require username and password fields to be sent in https header."""
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -30,7 +30,7 @@ def ldap_credentials_required(f):
 
 
 @app.route('/api/profiles', methods=['GET'])
-@ldap_credentials_required
+@api_credentials_required
 def api_profiles_index():
     """Handle GET and POST profile requests."""
     if request.method == 'GET':
@@ -39,7 +39,7 @@ def api_profiles_index():
 
 
 @app.route('/api/profiles', methods=['POST'])
-@ldap_credentials_required
+@api_credentials_required
 def api_profiles_create():
     if request.method == 'POST':
         profile = request.get_json()
@@ -51,7 +51,7 @@ def api_profiles_create():
 
 
 @app.route('/api/profiles/<profile_id>', methods=['PUT'])
-@ldap_credentials_required
+@api_credentials_required
 def api_profiles_update(profile_id):
     """Update or delete specified profile id."""
     if request.method == 'PUT':
@@ -70,7 +70,7 @@ def api_profiles_update(profile_id):
 
 
 @app.route('/api/profiles/<profile_id>', methods=['DELETE'])
-@ldap_credentials_required
+@api_credentials_required
 def api_profiles_delete(profile_id):
     if request.method == 'DELETE':
         # Remove profile stored at specified id.
@@ -82,14 +82,14 @@ def api_profiles_delete(profile_id):
 
 
 @app.route('/api/sshkeys')
-@ldap_credentials_required
+@api_credentials_required
 def api_sshkeys_list():
     """Export ssh keys into a downloadable json file."""
     return jsonify(export.collect_all_keys())
 
 
 @app.route('/api/instances/<instance_id>/name', methods=['PUT', 'GET'])
-@ldap_credentials_required
+@api_credentials_required
 def api_instances_name(instance_id):
     if request.method == 'PUT':
         if 'name' not in request.form or len(request.form['name']) <= 0:
@@ -103,7 +103,7 @@ def api_instances_name(instance_id):
 
 
 @app.route('/api/instances/<instance_id>/status', methods=['PUT', 'GET'])
-@ldap_credentials_required
+@api_credentials_required
 def api_instances_status(instance_id):
     if request.method == 'PUT':
         if 'status' not in request.form or len(request.form['status']) <= 0:
@@ -118,7 +118,7 @@ def api_instances_status(instance_id):
 
 
 @app.route('/api/instances/<instance_id>/user')
-@ldap_credentials_required
+@api_credentials_required
 def api_instances_user(instance_id):
     tags = aws.get_instance_tags(instance_id)
     return jsonify({'status': 'ok', 'User': tags['User']})
