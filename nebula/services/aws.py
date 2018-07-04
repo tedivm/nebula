@@ -313,6 +313,13 @@ def is_owner(instance_id, user):
     return False
 
 
+def get_instance_tags(instance_id):
+    ec2 = get_ec2_client()
+    instances = ec2.instances.filter(InstanceIds=[instance_id])
+    for instance in instances:
+        return get_tags_from_aws_object(instance)
+
+
 def get_tags_from_aws_object(ec2_object):
     tag_dict = {}
     if ec2_object.tags is None:

@@ -26,12 +26,12 @@ def create_token(instance_token=False):
 
 
 def verify(token_id, token):
-    query = "SELECT * FROM profiles WHERE id = %s"
-    token_data = db.find_one_dict(query, (id,))
+    query = "SELECT * FROM tokens WHERE token_id = %s"
+    token_data = db.find_one_dict(query, (token_id,))
 
     if pwd_context.verify(token, token_data['token_hash']):
         query = "UPDATE tokens SET last_used = now() WHERE token_id = %s"
-        db.execute(query, (name, ami, owner, filter, userdata, id))
+        db.execute(query, (token_id,))
         return True
 
     return False

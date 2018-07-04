@@ -1,22 +1,31 @@
 import json
 from nebula import app
 from functools import wraps
-from nebula.models import profiles
-from nebula.services import export, ldapuser
-from flask import request, abort, jsonify, Response
+from nebula.models import profiles, tokens
+from nebula.services import aws, export, ldapuser
+from flask import request, abort, jsonify
 
 
 def ldap_credentials_required(f):
     """Require username and password fields to be sent in https header."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        if 'username' not in request.headers or 'password' not in request.headers:
-            return abort(401)
-        if not ldapuser.authenticate(request.headers['username'], request.headers['password']):
-            return abort(403)
-        if not ldapuser.is_api_authorized(request.headers['username']):
-            return abort(403)
-        return f(*args, **kwargs)
+
+        if 'id' in request.headers and 'token' in request.headers:
+            if not tokens.verify(request.headers['id'], request.headers['token']):
+                print('unable to verify token')
+                return abort(403)
+            return f(*args, **kwargs)
+
+        if 'username' in request.headers and 'password' in request.headers:
+            if not ldapuser.authenticate(request.headers['username'], request.headers['password']):
+                return abort(403)
+            if not ldapuser.is_api_authorized(request.headers['username']):
+                return abort(403)
+            return f(*args, **kwargs)
+
+        return abort(401)
+
     return decorated
 
 
@@ -77,3 +86,39 @@ def api_profiles_delete(profile_id):
 def api_sshkeys_list():
     """Export ssh keys into a downloadable json file."""
     return jsonify(export.collect_all_keys())
+
+
+@app.route('/api/instances/<instance_id>/name', methods=['PUT', 'GET'])
+@ldap_credentials_required
+def api_instances_name(instance_id):
+    if request.method == 'PUT':
+        if 'name' not in request.form or len(request.form['name']) <= 0:
+            abort(400)
+        name = request.form['name']
+        aws.tag_instance.delay(instance_id, 'Name', name)
+        return jsonify({'status': 'ok'})
+    else:
+        tags = aws.get_instance_tags(instance_id)
+        return jsonify({'status': 'ok', 'Name': tags['Name']})
+
+
+@app.route('/api/instances/<instance_id>/status', methods=['PUT', 'GET'])
+@ldap_credentials_required
+def api_instances_status(instance_id):
+    if request.method == 'PUT':
+        if 'status' not in request.form or len(request.form['status']) <= 0:
+            abort(400)
+        status = request.form['status']
+        aws.tag_instance.delay(instance_id, 'Status', status)
+        return jsonify({'status': 'ok'})
+    else:
+        tags = aws.get_instance_tags(instance_id)
+        return jsonify({'status': 'ok', 'Status': tags['Status']})
+
+
+
+@app.route('/api/instances/<instance_id>/user')
+@ldap_credentials_required
+def api_instances_user(instance_id):
+    tags = aws.get_instance_tags(instance_id)
+    return jsonify({'status': 'ok', 'User': tags['User']})
