@@ -28,13 +28,24 @@ def create_token(instance_token=False):
 def verify(token_id, token):
     query = "SELECT * FROM tokens WHERE token_id = %s"
     token_data = db.find_one_dict(query, (token_id,))
-
+    if not token_data:
+        return False
     if pwd_context.verify(token, token_data['token_hash']):
         query = "UPDATE tokens SET last_used = now() WHERE token_id = %s"
         db.execute(query, (token_id,))
         return True
 
     return False
+
+
+def is_instance(token_id):
+    token_data = get_token(token_id)
+    return token_data['instance_token']
+
+
+def get_token(token_id):
+    query = "SELECT * FROM tokens WHERE token_id = %s"
+    return db.find_one_dict(query, (token_id,))
 
 
 def remove_token(token_id):

@@ -304,13 +304,16 @@ def tag_instance(instance_id, tag, value):
 
 @cache.cache()
 def is_owner(instance_id, user):
+    instance = get_instance(instance_id)
+    if not instance:
+        return False
+    tags = get_tags_from_aws_object(instance)
+    return 'User' in tags and tags['User'] == user
+
+
+def get_instance(instance_id):
     ec2 = get_ec2_client()
-    print(instance_id)
-    instances = ec2.instances.filter(InstanceIds=[instance_id])
-    for instance in instances:
-        tags = get_tags_from_aws_object(instance)
-        return 'User' in tags and tags['User'] == user
-    return False
+    return ec2.Instance(instance_id)
 
 
 def get_instance_tags(instance_id):

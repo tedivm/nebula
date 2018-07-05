@@ -6,15 +6,34 @@ from nebula.services import aws, export, ldapuser
 from flask import request, abort, jsonify
 
 
+def admin_credentials_required(f):
+    """Require username and password fields to be sent in https header."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'username' not in request.headers or 'password' not in request.headers:
+            return abort(401)
+        if not ldapuser.authenticate(request.headers['username'], request.headers['password']):
+            return abort(403)
+        if not ldapuser.is_api_authorized(request.headers['username']):
+            return abort(403)
+        return f(*args, **kwargs)
+    return decorated
+
 def api_credentials_required(f):
     """Require username and password fields to be sent in https header."""
     @wraps(f)
     def decorated(*args, **kwargs):
-
         if 'id' in request.headers and 'token' in request.headers:
             if not tokens.verify(request.headers['id'], request.headers['token']):
-                print('unable to verify token')
                 return abort(403)
+            if tokens.is_instance(request.headers['id']):
+                if 'instance_id' in kwargs:
+                    instance = aws.get_instance(kwargs['instance_id'])
+                    if not instance:
+                        return abort(400)
+                    client_ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+                    if instance.private_ip_address != client_ip:
+                        return abort(403)
             return f(*args, **kwargs)
 
         if 'username' in request.headers and 'password' in request.headers:
@@ -30,7 +49,7 @@ def api_credentials_required(f):
 
 
 @app.route('/api/profiles', methods=['GET'])
-@api_credentials_required
+@admin_credentials_required
 def api_profiles_index():
     """Handle GET and POST profile requests."""
     if request.method == 'GET':
@@ -39,7 +58,7 @@ def api_profiles_index():
 
 
 @app.route('/api/profiles', methods=['POST'])
-@api_credentials_required
+@admin_credentials_required
 def api_profiles_create():
     if request.method == 'POST':
         profile = request.get_json()
@@ -51,7 +70,7 @@ def api_profiles_create():
 
 
 @app.route('/api/profiles/<profile_id>', methods=['PUT'])
-@api_credentials_required
+@admin_credentials_required
 def api_profiles_update(profile_id):
     """Update or delete specified profile id."""
     if request.method == 'PUT':
@@ -70,7 +89,7 @@ def api_profiles_update(profile_id):
 
 
 @app.route('/api/profiles/<profile_id>', methods=['DELETE'])
-@api_credentials_required
+@admin_credentials_required
 def api_profiles_delete(profile_id):
     if request.method == 'DELETE':
         # Remove profile stored at specified id.
