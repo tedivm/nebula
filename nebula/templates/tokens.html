@@ -16,7 +16,7 @@
 </div>
 
 <div class="row">
-    <div class="large-8 columns">
+    <div class="large-10 columns">
       <div class="row columns">
 
         <form style="float: left; margin-right: 5px" action="{{url_for('token_create')}}" method="POST">
@@ -39,6 +39,7 @@
                 <th>Instance Token</th>
                 <th>Created</th>
                 <th>Last Used</th>
+                <th>Creator</th>
                 <th>Remove</th>
               </tr>
             </thead>
@@ -50,6 +51,7 @@
                     <td>{{ token.instance_token }}</td>
                     <td>{{ token.created_at|datetimefilter }}</td>
                     <td>{{ token.last_used|datetimefilter }}</td>
+                    <td>{{ token.creator }}</td>
                     <td>
                       <a href="{{url_for('token_delete', token_id=token.token_id)}}" data-tokenid="{{token.token_id}}" class="delete_token">
                         <i data-tooltip data-disable-hover="false" title='Remove Token' class="has-tip fa-times fa"></i>

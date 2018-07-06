@@ -1,4 +1,4 @@
-from flask import url_for, render_template, jsonify, request
+from flask import url_for, render_template, jsonify, request, session
 from nebula import app
 from nebula.models import tokens
 from nebula.routes.decorators import admin_required
@@ -17,7 +17,7 @@ def token_create():
     if request.method == 'POST':
         is_instance_token_string = request.form.get('instance_token', 'false')
         instance_token = is_instance_token_string == 'true'
-        token_id, token = tokens.create_token(instance_token)
+        token_id, token = tokens.create_token(session['username'], instance_token)
         return render_template(
             "token_creation.html",
             token_id=token_id,

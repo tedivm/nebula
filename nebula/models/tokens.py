@@ -9,7 +9,7 @@ pwd_context = CryptContext(
 )
 
 
-def create_token(instance_token=False):
+def create_token(creator, instance_token=False):
     # Create random number for ID
     token_id = str(uuid.uuid4())[-12:]
 
@@ -19,8 +19,8 @@ def create_token(instance_token=False):
     # Hash it- don't store the token
     token_hash = pwd_context.hash(token)
 
-    query = "INSERT INTO tokens(token_id, token_hash, instance_token) VALUES(%s, %s, %s) RETURNING id"
-    db.insert_and_get_id(query, (token_id, token_hash, instance_token))
+    query = "INSERT INTO tokens(token_id, creator, token_hash, instance_token) VALUES(%s, %s, %s, %s) RETURNING id"
+    db.insert_and_get_id(query, (token_id, creator, token_hash, instance_token))
 
     return (token_id, token)
 
