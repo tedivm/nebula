@@ -1,0 +1,19 @@
+{
+  "license": "MIT",
+  "files": [
+    "nebula/static/js/*"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "standard": "^10.0.3"
+  },
+  "standard": {
+    "ignore": [
+      "nebula/static/js/vendor"
+    ],
+    "globals": [
+      "$",
+      "Foundation"
+    ]
+  }
+}

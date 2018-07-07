@@ -4,13 +4,13 @@ $(document).ready(function () {
    */
   $('.serverlabel').on('keydown', function (e) {
     // Did they hit escape?
-    if (e.keyCode == 27) {
+    if (e.keyCode === 27) {
       $(this).text($(this).data('originallabel'))
       window.getSelection().removeAllRanges()
     }
 
     // Did they hit enter?
-    if (e.keyCode == 13) {
+    if (e.keyCode === 13) {
       e.preventDefault()
       const id = $(this).attr('id')
       const firstLabel = $(this).data('originallabel')
@@ -157,7 +157,6 @@ $(document).ready(function () {
    * Profiles
    */
   $('table.profilelist a.delete_profile').click(function (event) {
-    const self = $(this)
     const profileId = $(this).data('profileid')
     console.log(`Removing profile ${profileId}`)
     event.preventDefault()
@@ -186,7 +185,6 @@ $(document).ready(function () {
    */
 
   $('table.tokenlist a.delete_token').click(function (event) {
-    const self = $(this)
     const tokenId = $(this).data('tokenid')
     console.log(`Removing token ${tokenId}`)
     event.preventDefault()
@@ -209,8 +207,6 @@ $(document).ready(function () {
       }
     })
   })
-
-
 })
 
 function scheduleShutdownAction () {
@@ -223,7 +219,7 @@ function scheduleShutdownAction () {
     shutdowntime = timestampToString(shutdowntimestamp)
   }
 
-  var popup = new Foundation.Reveal($('#scheduleShutdownModal')).open()
+  new Foundation.Reveal($('#scheduleShutdownModal')).open()
   $('#shutdownTimeSelector').val(shutdowntime)
   $('#shutdownTimeSelector').data('instanceid', instanceid)
   $('#shutdownTimeSelector').fdatepicker({
@@ -235,7 +231,7 @@ function scheduleShutdownAction () {
 }
 
 function actionSuccess () {
-  modal = $(this.self).data('confirmationModal')
+  let modal = $(this.self).data('confirmationModal')
   if (!modal) {
     modal = '#confirmationModal'
   }
@@ -250,8 +246,8 @@ function actionSuccess () {
 }
 
 function serverSizeLimiter () {
-  const profile_id = $(this).val()
-  $.ajax(`/profiles/${profile_id}/ami.json`, {
+  const profileId = $(this).val()
+  $.ajax(`/profiles/${profileId}/ami.json`, {
     dataType: 'json',
     success: function (ami) {
       $.ajax(`/amis/${ami}/size.json`, {
@@ -401,9 +397,9 @@ function updateServerTable () {
         const row = $(this)
         const id = row.attr('id')
         if (id) {
-          const instance_id = id.split('_')[1]
-          if (!instanceIds.includes(instance_id)) {
-            console.log(`Removing row with instance id ${instance_id}`)
+          const instanceId = id.split('_')[1]
+          if (!instanceIds.includes(instanceId)) {
+            console.log(`Removing row with instance id ${instanceId}`)
             row.addClass('remove')
             dataTable.row('.remove').remove().draw(false)
           }
@@ -572,10 +568,10 @@ function filterPast (date) {
   now.setTime(now.getTime() - dateOffset)
   if (date.getFullYear() < now.getFullYear()) {
     return 'disabled'
-  } else if (date.getFullYear() == now.getFullYear()) {
+  } else if (date.getFullYear() === now.getFullYear()) {
     if (date.getMonth() < now.getMonth()) {
       return 'disabled'
-    } else if (date.getMonth() == now.getMonth()) {
+    } else if (date.getMonth() === now.getMonth()) {
       if (date.getDate() < now.getDate()) {
         return 'disabled'
       }
