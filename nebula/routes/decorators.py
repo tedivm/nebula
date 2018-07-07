@@ -37,7 +37,24 @@ def admin_required(f):
             return redirect(url_for('login'))
 
         if not ldapuser.is_admin(session['username']):
-            return False
+            return abort(403)
+
+        return f(*args, **kwargs)
+    return decorated_admin_function
+
+
+def admin_or_owner_required(f):
+    @wraps(f)
+    def decorated_admin_function(*args, **kwargs):
+        if 'username' not in session:
+            return redirect(url_for('login'))
+
+        if 'instance_id' not in kwargs:
+            return abort(400)
+
+        if not aws.is_owner(kwargs['instance_id'], session['username']):
+            if not ldapuser.is_admin(session['username']):
+                return abort(403)
 
         return f(*args, **kwargs)
     return decorated_admin_function

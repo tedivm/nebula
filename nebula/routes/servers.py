@@ -1,6 +1,6 @@
 from flask import Flask, session, redirect, url_for, escape, request, render_template, jsonify, abort
 from nebula import app
-from nebula.routes.decorators import login_required, admin_required
+from nebula.routes.decorators import login_required, admin_required, admin_or_owner_required
 from nebula.routes.helpers import request_wants_json
 from nebula.models import profiles
 from nebula.services import aws
@@ -42,31 +42,14 @@ def server_list_json():
     servers = aws.get_instance_list(owner=session['username'], terminated=False)
     serverlist = []
     for server in servers:
-        tags = aws.get_tags_from_aws_object(server)
-        serverdata = {
-            'launch': server.launch_time,
-            'cost': aws.get_cost(server),
-            'group': tags.get('Group', False),
-            'label': tags.get('Label', False),
-            'instance_id': server.instance_id,
-            'private_ip_address': server.private_ip_address,
-            'instance_type': server.instance_type,
-            'disk_space': tags.get('Disk_Space', False),
-            'profile': tags.get('Profile', False),
-            'status': tags.get('Status', False),
-            'shutdown': tags.get('Shutdown', False),
-            'name': tags.get('Name', False),
-            'state': server.state['Name']
-        }
+        serverdata = get_server_information(server)
         serverlist.append(serverdata)
     return jsonify(serverlist)
 
 
 @app.route('/servers/<instance_id>/start', methods = ["GET", "POST"])
-@login_required
+@admin_or_owner_required
 def server_start(instance_id):
-    if not should_allow(instance_id):
-        abort(404)
     if request.method == 'POST':
         aws.start_instance.delay(instance_id)
         if request_wants_json():
@@ -78,10 +61,8 @@ def server_start(instance_id):
 
 
 @app.route('/servers/<instance_id>/stop', methods = ["GET", "POST"])
-@login_required
+@admin_or_owner_required
 def server_stop(instance_id):
-    if not should_allow(instance_id):
-        abort(404)
     if request.method == 'POST':
         aws.stop_instance.delay(instance_id)
         if request_wants_json():
@@ -93,10 +74,8 @@ def server_stop(instance_id):
 
 
 @app.route('/server/<instance_id>/schedulestop', methods = ["GET", "POST"])
-@login_required
+@admin_or_owner_required
 def server_schedule_stop(instance_id):
-    if not should_allow(instance_id):
-        abort(404)
     if request.method == 'POST':
         if 'stoptime' not in request.form:
             app.logger.info('stoptime not in request')
@@ -114,10 +93,8 @@ def server_schedule_stop(instance_id):
 
 
 @app.route('/servers/<instance_id>/reboot', methods = ["GET", "POST"])
-@login_required
+@admin_or_owner_required
 def server_reboot(instance_id):
-    if not should_allow(instance_id):
-        abort(404)
     if request.method == 'POST':
         aws.reboot_instance.delay(instance_id)
         if request_wants_json():
@@ -129,10 +106,8 @@ def server_reboot(instance_id):
 
 
 @app.route('/server/<instance_id>/terminate', methods = ["GET", "POST"])
-@login_required
+@admin_or_owner_required
 def server_terminate(instance_id):
-    if not should_allow(instance_id):
-        abort(404)
     if request.method == 'POST':
         aws.terminate_instance.delay(instance_id)
         if request_wants_json():
@@ -144,10 +119,8 @@ def server_terminate(instance_id):
 
 
 @app.route('/server/<instance_id>/label', methods = ["GET", "POST"])
-@login_required
+@admin_or_owner_required
 def server_label(instance_id):
-    if not should_allow(instance_id):
-        abort(404)
     if request.method == 'POST':
         if 'label' not in request.form or len(request.form['label']) <= 0:
             abort(400)
@@ -160,16 +133,26 @@ def server_label(instance_id):
     return render_template("confirm.html", message="")
 
 
-@app.route('/server/<group_id>/terminate/group', methods=['GET', 'POST'])
+@app.route('/server/<instance_id>/info', methods = ["GET", "POST"])
+@admin_or_owner_required
+def server_info(instance_id):
+    instance = aws.get_instance(instance_id)
+    info = get_server_information(instance)
+    return jsonify(info)
+
+
+@app.route('/groups/<group_id>/terminate/group', methods=['GET', 'POST'])
 @login_required
 def server_terminate_group(group_id):
     """Terminate all instances in the specified instance group."""
     instances = aws.get_instances_in_group(group_id)
     instances_metadata = []
-
+    is_admin = ldapuser.is_admin(session['username'])
     for instance in instances:
-        if not should_allow(instance.id):
-            abort(404)
+        if not is_admin:
+            if not aws.is_owner(instance_id, session['username']):
+                abort(404)
+
         instances_metadata.append({'id': instance.id,
                                    'private_ip_address': instance.private_ip_address})
 
@@ -198,9 +181,21 @@ def profile_ami(profile_id):
     return jsonify(aws.get_ami_from_profile(profile_id))
 
 
-def should_allow(instance_id):
-    if aws.is_owner(instance_id, session['username']):
-        return True
-    if ldapuser.is_admin(session['username']):
-        return True
-    return False
+
+def get_server_information(server):
+    tags = aws.get_tags_from_aws_object(server)
+    return {
+        'launch': server.launch_time,
+        'cost': aws.get_cost(server),
+        'group': tags.get('Group', False),
+        'label': tags.get('Label', False),
+        'instance_id': server.instance_id,
+        'private_ip_address': server.private_ip_address,
+        'instance_type': server.instance_type,
+        'disk_space': tags.get('Disk_Space', False),
+        'profile': tags.get('Profile', False),
+        'status': tags.get('Status', False),
+        'shutdown': tags.get('Shutdown', False),
+        'name': tags.get('Name', False),
+        'state': server.state['Name']
+    }
