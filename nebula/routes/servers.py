@@ -189,7 +189,7 @@ def get_server_information(server):
         'launch': server.launch_time,
         'cost': aws.get_cost(server),
         'group': tags.get('Group', False),
-        'label': tags.get('Label', False),
+        'label': tags.get('Label', ''),
         'instance_id': server.instance_id,
         'private_ip_address': server.private_ip_address,
         'instance_type': server.instance_type,
@@ -197,6 +197,6 @@ def get_server_information(server):
         'profile': tags.get('Profile', False),
         'status': tags.get('Status', False),
         'shutdown': tags.get('Shutdown', False),
-        'name': tags.get('Name', False),
+        'name': tags.get('Name', ''),
         'state': server.state['Name']
     }
