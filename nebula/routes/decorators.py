@@ -3,7 +3,7 @@ import time
 from functools import wraps
 from flask import g, request, redirect, url_for, session, make_response
 from wsgiref.handlers import format_date_time
-from nebula.services import ldapuser
+from nebula.services import aws, ldapuser
 from nebula.models import ssh_keys
 from nebula.routes import errors
 

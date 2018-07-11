@@ -133,7 +133,7 @@ def server_label(instance_id):
     return render_template("confirm.html", message="")
 
 
-@app.route('/server/<instance_id>/info', methods = ["GET", "POST"])
+@app.route('/server/<instance_id>/info')
 @admin_or_owner_required
 def server_info(instance_id):
     instance = aws.get_instance(instance_id)
@@ -185,6 +185,7 @@ def profile_ami(profile_id):
 def get_server_information(server):
     tags = aws.get_tags_from_aws_object(server)
     return {
+        'ami': server.image_id,
         'launch': server.launch_time,
         'cost': aws.get_cost(server),
         'group': tags.get('Group', False),

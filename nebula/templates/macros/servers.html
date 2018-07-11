@@ -74,6 +74,7 @@
           <table role="grid" id='servertable' class="datatable serverlist">
             <thead>
               <tr>
+                <th title=""><i title="Get more information about instance." class="fa-plus fa"></th>
                 <th title="Hours that AWS will bill for since this machine was most recently launched.">Launch</th>
                 <th data-tooltip data-disable-hover="false" class="has-tip" title="Total AWS bill to date accrued by this instance since it was last launched.">Cost</th>
                 {% if admin %}
@@ -81,14 +82,9 @@
                 {% endif %}
                 <th>Group</th>
                 <th>Label</th>
-                <th>Instance ID</th>
                 <th>IP</th>
                 <th>Type</th>
                 <th>Disk (GiBs)</th>
-                {% if admin %}
-                <th>AMI</th>
-                {% endif %}
-                <th>Profile</th>
                 {% if not config.aws.auto_live %}
                 <th id='server_table_header_status' data-tooltip data-disable-hover="false" class="has-tip" title="Wait until server is 'Live' before using.">Status</th>
                 {% endif %}
@@ -102,6 +98,7 @@
                 {% for server in servers %}
                 {% set tags = get_tags_from_aws_object(server) %}
                   <tr id="row_{{ server.instance_id }}" class="{% if tags.Status != 'Live' %}action-required-instance{% endif %}">
+                    <td id="info_{{ server.instance_id }}"><i id="info_icon_{{ server.instance_id }}" data-instanceid="{{ server.instance_id }}" title="Get more information about '{{ server.instance_id }}'." class="fa-plus fa server-info"></i></td>
                     <td id="launch_{{ server.instance_id }}">{{ server.launch_time|datetimefilter }}</td>
                     <td id="cost_{{ server.instance_id }}">{{ (as_currency(pricelist[server.instance_type]/3600*instance_seconds_billed(server))) }}</td>
 
@@ -129,9 +126,6 @@
                     </td>
                     {% endif %}
 
-                    <td id="instanceid_{{ server.instance_id }}">{{ server.instance_id }}
-                      <i data-tooltip data-disable-hover="false" data-clipboard-text="{{ server.instance_id }}" title="Copy '{{ server.instance_id }}' to clipboard." class="fa-clipboard fa copy"></i>
-                    </td>
 
                     <td id="ipaddress_{{ server.instance_id }}">{{ server.private_ip_address }}
                       {% if instance_is_running(server) %}
@@ -146,13 +140,6 @@
                     {% else %}
                     <td id="diskspace_{{ server.instance_id }}" data-sort="{{ tags.Disk_Space|int }}">{{ tags.Disk_Space }} (${{ (tags.Disk_Space|int * 0.1)|round|int }}/month)</td>
                     {% endif %}
-
-                    {% if admin %}
-                    <td id="image_{{ server.instance_id }}">{{ server.image_id }}</td>
-                    {% endif %}
-
-                    {% set profilelist = tags.Profile.split(' ') %}
-                    <td id="profile_{{ server.instance_id }}" title='{{ tags.Profile }}'>{{ profilelist[0] }}</td>
 
                     {% if not config.aws.auto_live %}
                     <td id="status_{{ server.instance_id }}">{{ tags.Status }}</td>

@@ -146,7 +146,7 @@ $(document).ready(function () {
   /*
    * Initialize any Datatables (page agnostic)
    */
-  initializeDataTable()
+  const dataTable = initializeDataTable()
 
   /*
    * Initialize any 'quickConfirm' actions.
@@ -206,6 +206,34 @@ $(document).ready(function () {
         popup.open()
       }
     })
+  })
+
+  /*
+   * Expand Server Information
+   */
+
+  $('i.server-info').click(function (event) {
+    const icon = $(this)
+    const instanceId = icon.data('instanceid')
+    const tr = $(`tr#row_${instanceId}`)
+    const row = dataTable.row(tr)
+
+    console.log(`Clicked on ${instanceId}`)
+
+    if (row.child.isShown()) {
+      // This row is already open - close it
+      row.child.hide()
+      tr.removeClass('shown')
+    } else {
+      // Open new row, populating it with data from the server.
+      $.getJSON({
+        url: `/server/${instanceId}/info`,
+        success: function (instanceData) {
+          row.child(getInstanceInfoTable(instanceData)).show()
+          tr.addClass('shown')
+        }
+      })
+    }
   })
 })
 
@@ -322,7 +350,7 @@ function initializeDataTable () {
     'searching': false,
     'destroy': true,
     'order': [
-      [0, 'desc']
+      [1, 'desc']
     ]
   }
   $.fn.dataTable.ext.errMode = 'none'
@@ -332,6 +360,7 @@ function initializeDataTable () {
     })
     .DataTable(options)
   $('a.oneclickconfirm').quickConfirm().click(recordLastActivityTime)
+  return dataTable
 }
 
 let lastUpdate = new Date()
@@ -389,6 +418,9 @@ function updateServerTable () {
           // Since a new server has been detected we reduce the ratelimiting to get updates.
           recordLastActivityTime()
           dataTable.row.add($(getNewRow(server, admin))[0]).draw(false)
+
+          // Resize columns to fit new data.
+          dataTable.columns.adjust().draw()
         }
       }
 
@@ -420,7 +452,8 @@ function updateServerTable () {
 function getNewRow (server, admin = false) {
   const controlPanel = getControlPanel(server)
   let output = `
-  <tr id="row_${server.instance_id}" class="${!server.status || server.status !== 'Live' ? action - required - instance : ''}">
+  <tr id="row_${server.instance_id}" class="${!server.status || server.status !== 'Live' ? 'action-required-instance' : ''}">
+    <td id="info_${server.instance_id}"><i data-instanceid="${server.instance_id}" title="Get more information about '${server.instance_id}'." class="fa-plus fa"></i></td>
     <td id="launch_${server.instance_id}">${gmtToLocal(server.launch)}</td>
     <td id="cost_${server.instance_id}">$${server.cost.toFixed(2)}</td>
     `
@@ -441,7 +474,6 @@ function getNewRow (server, admin = false) {
   output += `
     <td id="group_${server.instance_id}">${server.group ? server.group.substring(0, 8) : ''}</td>
     <td contenteditable="true" class="serverlabel" id="serverlabel_${server.instance_id}" data-originallabel="" href="/server/${server.instance_id}/label">${label}</td>
-    <td id="instanceid_${server.instance_id}">${server.instance_id} <i data-tooltip data-disable-hover="false" data-clipboard-text="${server.instance_id}" title="Copy '${server.instance_id}' to clipboard." class="fa-clipboard fa copy"></i></td>
     <td id="ipaddress_${server.instance_id}">${server.private_ip_address} <i data-tooltip data-disable-hover="false" data-clipboard-text="ssh -A ${server.private_ip_address}" title="Copy 'ssh ${server.private_ip_address}' to clipboard." class="fa-clipboard fa copy"></i></td>
     <td id="instancetype_${server.instance_id}">${server.instance_type}</td>
     <td id="diskspace_${server.instance_id}" data-sort="${server.disk_space}">${server.disk_space} ($${server.disk_space * 0.1}/month)</td>
@@ -453,9 +485,6 @@ function getNewRow (server, admin = false) {
       `
   }
 
-  output += `
-    <td id="profile_${server.instance_id}" title='${server.profile}'>${server.profile}</td>
-    `
   if ($(`#server_table_header_status`)) {
     output += `
       <td id="status_${server.instance_id}">${server.status ? server.status : ''}</td>
@@ -473,6 +502,14 @@ function getNewRow (server, admin = false) {
   </tr>`
 
   return output
+}
+
+function getInstanceInfoTable (instanceData) {
+  return `<table id='instance_info_${instanceData['instance_id']}' class='unstriped'>
+    <tr><td>Instance ID:</td><td>${instanceData['instance_id']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['instance_id']}" title="Copy '${instanceData['instance_id']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
+    <tr><td>AMI:</td><td>${instanceData['ami']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['ami']}" title="Copy '${instanceData['ami']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
+    <tr><td>Profile:</td><td>${instanceData['profile']}</td></tr>
+  </table>`
 }
 
 function getControlPanel (server) {
