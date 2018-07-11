@@ -183,11 +183,13 @@ def profile_ami(profile_id):
 
 
 def get_server_information(server):
+    hourly_price = aws.get_instance_description(server.instance_type)['price']
     tags = aws.get_tags_from_aws_object(server)
     return {
         'ami': server.image_id,
         'launch': server.launch_time,
         'cost': aws.get_cost(server),
+        'price': hourly_price,
         'group': tags.get('Group', False),
         'label': tags.get('Label', ''),
         'instance_id': server.instance_id,

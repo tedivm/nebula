@@ -506,10 +506,11 @@ function getNewRow (server, admin = false) {
 
 function getInstanceInfoTable (instanceData) {
   return `<table id='instance_info_${instanceData['instance_id']}' class='unstriped'>
-    <tr><td>Name:</td><td>${instanceData['name']}</td></tr>
+    <tr><td>Name:</td><td>${instanceData['name']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['name']}" title="Copy '${instanceData['name']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
+    <tr><td>Hourly Price:</td><td>$${instanceData['price']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['price']}" title="Copy '${instanceData['price']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
     <tr><td>Instance ID:</td><td>${instanceData['instance_id']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['instance_id']}" title="Copy '${instanceData['instance_id']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
     <tr><td>AMI:</td><td>${instanceData['ami']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['ami']}" title="Copy '${instanceData['ami']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
-    <tr><td>Profile:</td><td>${instanceData['profile']}</td></tr>
+    <tr><td>Profile:</td><td>${instanceData['profile']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['profile']}" title="Copy '${instanceData['profile']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
   </table>`
 }
 
