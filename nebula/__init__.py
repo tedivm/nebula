@@ -65,8 +65,12 @@ if 'aws_secret_name' in app.config:
 if 'general' not in app.config:
     app.config['general'] = {
         'filecache': '/tmp/nebula',
-        'secret_key': 'changeme',
+        'secret_key': 'changeme'
     }
+
+if 'site_name' not in app.config['general']:
+    app.config['general']['site_name'] = 'nebula'
+
 
 # Initialize Celery
 from celery import Celery

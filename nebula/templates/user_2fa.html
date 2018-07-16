@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="callout primary">
+    <div class="row column">
+        <h1 class='text-center'>Configure 2FA Token</h1>
+        <p  class="lead"></p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="large-4 columns">
+        <canvas id='totp_token' class="qr" data-qrdata="{{ provisioning_uri }}"></canvas>
+
+        <form action="" method="post">
+          <label> Confirm New 2FA Code
+            <p><input type=text name=new_token></p>
+          </label>
+            <p><input type=submit class='button' value=Validate></p>
+        </form>
+    </div>
+</div>
+{% endblock %}

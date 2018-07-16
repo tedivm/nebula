@@ -4,6 +4,7 @@ import subprocess
 import click
 from nebula import app
 import shutil
+from nebula.models import users
 from nebula.services import notifications
 
 @app.cli.command()
@@ -21,6 +22,12 @@ def clean_sessions():
 def clear_cache():
     cachedata = app.config['general']['filecache'] + '/data'
     shutil.rmtree(cachedata)
+
+
+@app.cli.command()
+@click.argument('user')
+def reset_2fa(user):
+    users.save_user_token(user, None)
 
 
 @app.cli.command()

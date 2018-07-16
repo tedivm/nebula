@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="callout primary">
+    <div class="row column">
+        <h1 class='text-center'>Confirm 2FA Token</h1>
+        <p  class="lead"></p>
+    </div>
+</div>
+
+    <div class="row">
+        <div class="large-4 columns">
+            <form action="" method="post">
+              <label> 2FA Code
+                <p><input type=text name=token></p>
+              </label>
+                <p><input type=submit class='button' value=Validate></p>
+            </form>
+        </div>
+    </div>
+{% endblock %}

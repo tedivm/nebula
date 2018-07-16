@@ -235,6 +235,20 @@ $(document).ready(function () {
       })
     }
   })
+
+  /*
+   * Turn QR code elements into actual QR codes.
+   */
+  $('.qr').each(function () {
+    const qrelem = $(this)
+    const data = qrelem.data('qrdata')
+    console.log(`Creating QRCode: ${data}`)
+    const qr = new QRious({
+      element: qrelem[0],
+      value: data,
+      size: 250
+    })
+  })
 })
 
 function scheduleShutdownAction () {
