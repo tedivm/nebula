@@ -5,6 +5,20 @@ from nebula.services import ldapuser
 import pyotp
 import time
 
+def validate_token(saved_token, passed_token):
+    totp = pyotp.TOTP(saved_token)
+    if totp.verify(passed_token):
+        return True
+
+    past = time.time() - 30
+    if totp.verify(passed_token, for_time=past):
+        return True
+
+    future = time.time() + 30
+    if totp.verify(passed_token, for_time=future):
+        return True
+    return False
+
 
 @app.route('/logout', methods = ["GET", "POST"])
 def logout():
@@ -60,7 +74,7 @@ def login_2fa():
     if request.method == 'POST':
         passed_token = request.form.get('token', False)
         totp = pyotp.TOTP(saved_token)
-        if passed_token and totp.verify(passed_token):
+        if passed_token and validate_token(saved_token, passed_token):
             session['username'] = username
             session.pop('partial_authentication', None)
             return redirect(url_for('index'))
@@ -117,9 +131,8 @@ def user_2fa():
         # If user has 2FA enabled they need to validate against existing secret.
         if has_token:
             if '2fa_validated' not in session or not session['2fa_validated']:
-                old_totp = pyotp.TOTP(saved_token)
                 old_token = request.form.get('token', False)
-                if not old_token or not old_totp.verify(old_token):
+                if not old_token or not validate_token(saved_token, old_token):
                     return render_template("login_2fa.html")
 
                 # Record validation time so it can be allowed to expire.
@@ -130,7 +143,7 @@ def user_2fa():
 
 
         new_token = request.form.get('new_token', False)
-        if not new_token or not new_totp.verify(new_token):
+        if not new_token or not validate_token(session['2fa_token'], new_token):
             return render_template("user_2fa.html",
                                    provisioning_uri=provisioning_uri,
                                    newfail=True)
