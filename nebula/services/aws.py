@@ -378,7 +378,10 @@ def get_instances_in_group(group_id):
 def key_normalize(instance_type):
     family = instance_type.split('.')[0]
     realcost = get_instance_description(instance_type)['price']
-    price = str(int(realcost * 10000)).zfill(6)
+    if realcost:
+        price = str(int(realcost * 10000)).zfill(6)
+    else:
+        price = 'z'
     return "%s.%s" % (family, price)
 
 
@@ -412,9 +415,10 @@ def get_instance_description(instance_type):
     if instance_type not in descriptions:
         return False
     costs = get_updated_prices()
-    if instance_type not in costs:
-        return False
-    descriptions[instance_type]['price'] = costs[instance_type]
+    if instance_type in costs:
+        descriptions[instance_type]['price'] = costs[instance_type]
+    else:
+        descriptions[instance_type]['price'] = False
     return descriptions[instance_type]
 
 
