@@ -377,9 +377,11 @@ def get_instances_in_group(group_id):
 
 def key_normalize(instance_type):
     family = instance_type.split('.')[0]
-    realcost = get_instance_description(instance_type)['price']
-    if realcost:
-        price = str(int(realcost * 10000)).zfill(6)
+    description = get_instance_description(instance_type)
+    if not description:
+        return 'z'
+    if description['price']:
+        price = str(int(description['price'] * 10000)).zfill(6)
     else:
         price = 'z'
     return "%s.%s" % (family, price)
