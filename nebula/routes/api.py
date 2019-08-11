@@ -140,7 +140,7 @@ def api_instances_status(instance_id):
 @api_credentials_required
 def api_instances_stats(instance_id):
     if 'gpu_utilization' in request.form and request.form['gpu_utilization'] is not False:
-        if int(request.form['gpu_utilization']) > 0:
+        if float(request.form['gpu_utilization']) > 0:
             aws.tag_instance.delay(instance_id, 'GPU_Last_Use', str(int(time.time())))
         aws.tag_instance.delay(instance_id, 'GPU_Utilization', request.form['gpu_utilization'])
     if 'diskspace_utilization' in request.form and request.form['diskspace_utilization'] is not False:
