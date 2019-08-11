@@ -4,6 +4,7 @@ from functools import wraps
 from nebula.models import profiles, tokens
 from nebula.services import aws, export, ldapuser
 from flask import request, abort, jsonify
+import time
 
 
 def admin_credentials_required(f):
@@ -139,8 +140,8 @@ def api_instances_status(instance_id):
 @api_credentials_required
 def api_instances_stats(instance_id):
     if 'gpu_utilization' in request.form and request.form['gpu_utilization'] is not False:
-        if request.form['gpu_utilization'] > 0:
-            aws.tag_instance.delay(instance_id, 'GPU_Last_Use', '')
+        if int(request.form['gpu_utilization']) > 0:
+            aws.tag_instance.delay(instance_id, 'GPU_Last_Use', str(int(time.time())))
         aws.tag_instance.delay(instance_id, 'GPU_Utilization', request.form['gpu_utilization'])
     if 'diskspace_utilization' in request.form and request.form['diskspace_utilization'] is not False:
         aws.tag_instance.delay(instance_id, 'Diskspace_Utilization', request.form['diskspace_utilization'])
