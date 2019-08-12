@@ -283,35 +283,46 @@ def change_instance_type(instance_id, instance_type):
 
 @celery.task(rate_limit='1/m', expires=60)
 def shutdown_expired_instances():
-    curtimestamp = int(datetime.now(pytz.utc).timestamp())
     instances = get_instance_list(state='running', terminated=False)
     for instance in instances:
-        tags = get_tags_from_aws_object(instance)
-        print('Beginning check of %s' % (instance.instance_id,))
-        if 'Shutdown' in tags and tags['Shutdown'].isdigit() and int(tags['Shutdown']) > 0:
-            shutdown = int(tags['Shutdown'])
-            print("%s (%s < %s)" % (instance.instance_id, curtimestamp, shutdown))
-            if shutdown <= curtimestamp:
-                print("Shutting down instance %s" % (instance.instance_id))
-                stop_instance.delay(instance.instance_id)
-                continue
+        shutdown_expired_instance.delay(instance.instance_id)
 
-        if 'GPU_Shutdown' in tags and tags['GPU_Shutdown'].isdigit() and int(tags['GPU_Shutdown']) > 0:
-            # If the instance has no GPUs then don't check for idle gpu.
-            instance_details = get_instance_description(instance.instance_type)
-            if 'gpu' not in instance_details or instance_details['gpu'] < 1:
-                continue
-            # Don't shut down if instance has not been up for at least an hour.
-            if int(instance.launch_time.timestamp()) + (60*60) > curtimestamp:
-                continue
 
-            last_use = instance.launch_time.timestamp()
-            if 'GPU_Last_Use' in tags:
-                last_use = tags['GPU_Last_Use']
-            if curtimestamp - last_use > (int(tags['GPU_Shutdown']) * 60):
-                print("Shutting down instance %s" % (instance.instance_id))
-                stop_instance.delay(instance.instance_id)
-                continue
+@celery.task()
+def shutdown_expired_instance(instance_id):
+    instance = get_instance(instance_id)
+    curtimestamp = int(datetime.now(pytz.utc).timestamp())
+
+    print('Beginning check of %s' % (instance.instance_id,))
+
+    tags = get_tags_from_aws_object(instance)
+    if 'Shutdown' in tags and tags['Shutdown'].isdigit() and int(tags['Shutdown']) > 0:
+        shutdown = int(tags['Shutdown'])
+        print("%s (%s < %s)" % (instance.instance_id, curtimestamp, shutdown))
+        if shutdown <= curtimestamp:
+            print("Shutting down instance %s" % (instance.instance_id))
+            stop_instance.delay(instance.instance_id)
+            return
+
+    if 'GPU_Shutdown' in tags and tags['GPU_Shutdown'].isdigit() and int(tags['GPU_Shutdown']) > 0:
+        # If the instance has no GPUs then don't check for idle gpu.
+        instance_details = get_instance_description(instance.instance_type)
+        if 'gpu' not in instance_details or instance_details['gpu'] < 1:
+            return
+
+        # Don't shut down if instance has not been up for at least an hour.
+        if int(instance.launch_time.timestamp()) + (60*60) > curtimestamp:
+            return
+
+        last_use = instance.launch_time.timestamp()
+        if 'GPU_Last_Use' in tags:
+            last_use = tags['GPU_Last_Use']
+
+        if curtimestamp - last_use > (int(tags['GPU_Shutdown']) * 60):
+            print("Shutting down instance %s" % (instance.instance_id))
+            stop_instance.delay(instance.instance_id)
+            return
+
 
 
 @celery.task()
