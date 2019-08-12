@@ -22,8 +22,12 @@ def server_launch():
         shutdown = False
         if 'shutdown' in request.form and len(request.form['shutdown']) > 0:
             shutdown = request.form['shutdown']
+        gpuidle = False
+        if 'gpuIdleTime' in request.form and len(request.form['gpuIdleTime']) > 0:
+            gpuidle = request.form['gpuIdleTime']
+
         for _ in range(num_instances):
-            aws.launch_instance.delay(group_id, profile_id, instancetype, owner, size, label, shutdown)
+            aws.launch_instance.delay(group_id, profile_id, instancetype, owner, size, label, shutdown, gpuidle)
         return redirect(url_for('server_list'))
     profile_list = profiles.list_profiles()
     return render_template("server_form.html", profiles=profile_list)
@@ -76,15 +80,30 @@ def server_stop(instance_id):
 @app.route('/server/<instance_id>/schedulestop', methods = ["GET", "POST"])
 @admin_or_owner_required
 def server_schedule_stop(instance_id):
+
+
     if request.method == 'POST':
-        if 'stoptime' not in request.form:
-            app.logger.info('stoptime not in request')
+
+        if 'stoptime' not in request.form and 'gpustoptime' not in request.form:
+            app.logger.info('stoptime and gpustoptime not in request')
             abort(400)
-        stoptime = int(request.form['stoptime'])
-        if stoptime <= 0:
-            app.logger.info('stoptime is less than zero')
-            abort(400)
-        aws.tag_instance.delay(instance_id, 'Shutdown', request.form['stoptime'])
+
+        tags = {}
+
+        if 'stoptime' in request.form:
+            if int(request.form['stoptime']) < 0:
+                app.logger.info('stoptime is less than zero')
+                abort(400)
+            tags['Shutdown'] = request.form['stoptime']
+
+        if 'gpustoptime' in request.form:
+            if int(request.form['gpustoptime']) < 0:
+                app.logger.info('gpustoptime is less than zero')
+                abort(400)
+            tags['GPU_Shutdown'] = request.form['gpustoptime']
+
+        aws.multi_tag_instance.delay(instance_id, tags)
+
         if request_wants_json():
             return jsonify(True)
         else:
@@ -199,6 +218,7 @@ def get_server_information(server):
         'profile': tags.get('Profile', False),
         'status': tags.get('Status', False),
         'shutdown': tags.get('Shutdown', False),
+        'gpushutdown': tags.get('GPU_Shutdown', False),
         'name': tags.get('Name', ''),
         'state': server.state['Name']
     }

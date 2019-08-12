@@ -73,22 +73,45 @@ $(document).ready(function () {
   $('i.scheduleshutdown').click(scheduleShutdownAction)
 
   $('#shutdownTimeSubmit').click(function () {
+
+    let data = {}
+
     const instanceid = $('#shutdownTimeSelector').data('instanceid')
-    const shutdowntime = $('#shutdownTimeSelector').val()
-    const timestamp = Date.parse(shutdowntime) / 1000
+    const shutdowntime = $('#shutdownTimeSelector').val() || false
+    if (shutdowntime) {
+      data['stoptime'] = Date.parse(shutdowntime) / 1000
+      console.log(`Scheduling shutdown of instance ${instanceid} for ${shutdowntime} (${data['stoptime']}).`)
+    }
+
+    const gpuIdleTime = $('#gpuIdleInput').val() || false
+    if (gpuIdleTime) {
+      data['gpustoptime'] = gpuIdleTime
+      console.log(`Scheduling GPU idle shutdown for instance ${instanceid} to (${data['gpustoptime']}).`)
+    }
+
     const url = `/server/${instanceid}/schedulestop`
-    console.log(`Scheduling shutdown of instance ${instanceid} for ${shutdowntime} (${timestamp})`)
     $.ajax(url, {
       dataType: 'json',
       method: 'POST',
-      data: {
-        'stoptime': timestamp
-      },
-      success: function (data) {
+      data: data,
+      success: function (returnData) {
         const icon = $(`#scheduleShutdownButton_${instanceid}`)
-        icon.data('shutdowntime', timestamp).addClass('alert')
-        const shutdowntime = timestampToString(timestamp)
-        icon.prop('title', `Shutdown Scheduled for ${shutdowntime}`)
+        if (data['stoptime']) {
+          console.log('Set Shutdown Time data object')
+          icon.data('shutdowntime', data['stoptime'])
+        }
+        if (data['gpustoptime']) {
+          console.log('Set GPU Idle Time data object')
+          icon.data('gpushutdowntime', data['gpustoptime'])
+        }
+        if (data['stoptime'] || data['gpustoptime']) {
+          console.log('Set a title when something is scheduled')
+          const shutdowntime = timestampToString(data['stoptime'])
+          icon.prop('title', `Shutdown Scheduled for ${shutdowntime}`).addClass('alert')
+        } else {
+          console.log('set idle title')
+          icon.prop('title', `Schedule Shutdown for instance`).removeClass('alert')
+        }
       },
       error: function () {
         new Foundation.Reveal($('#errorModal')).open()
@@ -255,6 +278,7 @@ function scheduleShutdownAction () {
   const icon = $(this)
   const instanceid = icon.data('instanceid')
   const shutdowntimestamp = icon.data('shutdowntime')
+  const gpushutdowntime = icon.data('gpushutdowntime')
   console.log(`Currently scheduled to shutdown ${instanceid} at ${shutdowntimestamp}`)
   let shutdowntime = ''
   if (Number.isInteger(shutdowntimestamp)) {
@@ -262,6 +286,8 @@ function scheduleShutdownAction () {
   }
 
   new Foundation.Reveal($('#scheduleShutdownModal')).open()
+  $('#gpuIdleInput').val(gpushutdowntime)
+  $('#gpuIdleInput').data('instanceid', instanceid)
   $('#shutdownTimeSelector').val(shutdowntime)
   $('#shutdownTimeSelector').data('instanceid', instanceid)
   $('#shutdownTimeSelector').fdatepicker({
@@ -554,11 +580,22 @@ function getControlPanel (server) {
 
   // Scedule Shutdown
   if (state === 'running') {
+    let dataTags = ''
+    let alert = ''
     if (server.shutdown && server.shutdown > 0) {
-      controlPanel += `<i data-tooltip data-disable-hover="false" id="scheduleShutdownButton_${server.instance_id}" data-instanceid="${server.instance_id}" title='schedule' class="has-tip fa-clock-o fa scheduleshutdown alert" data-shutdowntime=${server.shutdown}></i>\n`
-    } else {
-      controlPanel += `<i data-tooltip data-disable-hover="false" id="scheduleShutdownButton_${server.instance_id}" data-instanceid="${server.instance_id}" title='schedule' class="has-tip fa-clock-o fa scheduleshutdown"></i>\n`
+      dataTags = ` data-shutdowntime=${server.shutdown}`
+      alert = 'alert'
     }
+    if (server.gpushutdown && server.gpushutdown >= 0) {
+      dataTags = ` data-gpushutdowntime=${server.gpushutdown}`
+      alert = 'alert'
+    }
+    controlPanel += `<i data-tooltip data-disable-hover="false"
+      id="scheduleShutdownButton_${server.instance_id}"
+      data-instanceid="${server.instance_id}"
+      title='schedule'
+      class="has-tip fa-clock-o fa scheduleshutdown ${alert}"
+      ${dataTags}></i>\n`
   } else {
     controlPanel += `<i data-tooltip title='Schedule Shutdown' class="fa-clock-o fa disabled has-tip"></i>\n`
   }

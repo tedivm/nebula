@@ -134,8 +134,8 @@ def get_ami_from_profile(profile_id):
         return latest['ImageId']
 
 
-@celery.task(rate_limit='20/m', expires=300, acks_late=False)
-def launch_instance(group_id, profile_id, instancetype, owner, size=120, label = False, shutdown = False):
+@celery.task(expires=300, acks_late=False)
+def launch_instance(group_id, profile_id, instancetype, owner, size=120, label = False, shutdown = False, gpuidle = False):
 
     with app.app_context():
         # within this block, current_app points to app.
@@ -218,7 +218,7 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
                 print('tagging network interface')
                 eni.create_tags(Tags=tags)
 
-            # Tag attached devices. Volumes initialize slowly so scheduler another task.
+            # Tag attached devices. Volumes initialize slowly so schedule another task.
             tag_instance_volumes.delay(instance.instance_id, tags)
 
             tags.append({'Key': 'Disk_Space', 'Value': str(size)})
@@ -226,6 +226,8 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
                 tags.append({'Key': 'Label', 'Value': label})
             if shutdown:
                 tags.append({'Key': 'Shutdown', 'Value': shutdown})
+            if gpuidle:
+                tags.append({'Key': 'GPU_Shutdown', 'Value': gpuidle})
             if autolive:
                 tags.append({'Key': 'Status', 'Value': 'Live'})
             instance.create_tags(Tags=tags)
@@ -233,7 +235,7 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
         return True
 
 
-@celery.task(rate_limit='120/m', expires=3600)
+@celery.task(expires=3600)
 def tag_instance_volumes(instance_id, tags):
     print('Tagging instance volumes %s' % (instance_id,))
     ec2 = get_ec2_client()
@@ -249,7 +251,7 @@ def tag_instance_volumes(instance_id, tags):
             time.sleep(5)
 
 
-@celery.task(rate_limit='20/m', expires=3600)
+@celery.task(expires=3600)
 def stop_instance(instance_id):
     print('Stopping instance %s' % (instance_id,))
     ec2 = get_ec2_client()
@@ -257,18 +259,26 @@ def stop_instance(instance_id):
     tag_instance(instance_id, 'Shutdown', 'false')
 
 
-@celery.task(rate_limit='20/m', expires=300)
+@celery.task(expires=300)
 def start_instance(instance_id):
     print('Starting instance %s' % (instance_id,))
     ec2 = get_ec2_client()
     ec2.instances.filter(InstanceIds=[instance_id]).start()
     tag_instance(instance_id, 'Shutdown', 'false')
 
-@celery.task(rate_limit='20/m', expires=300)
+
+@celery.task(expires=300)
 def reboot_instance(instance_id):
     print('Rebooting instance %s' % (instance_id,))
     ec2 = get_ec2_client()
     ec2.instances.filter(InstanceIds=[instance_id]).reboot()
+
+
+@celery.task(expires=300)
+def change_instance_type(instance_id, instance_type):
+    print('Changing instance %s\'s instance type to %s' % (instance_id, instance_type))
+    ec2 = get_ec2_client()
+    ec2.modify_instance_attribute(InstanceId=instance_id, Attribute='instanceType', Value=instance_type)
 
 
 @celery.task(rate_limit='1/m', expires=60)
@@ -278,22 +288,39 @@ def shutdown_expired_instances():
     for instance in instances:
         tags = get_tags_from_aws_object(instance)
         print('Beginning check of %s' % (instance.instance_id,))
-        if 'Shutdown' in tags and tags['Shutdown'].isdigit():
+        if 'Shutdown' in tags and tags['Shutdown'].isdigit() and int(tags['Shutdown']) > 0:
             shutdown = int(tags['Shutdown'])
             print("%s (%s < %s)" % (instance.instance_id, curtimestamp, shutdown))
             if shutdown <= curtimestamp:
                 print("Shutting down instance %s" % (instance.instance_id))
                 stop_instance.delay(instance.instance_id)
+                continue
+
+        if 'GPU_Shutdown' in tags and tags['GPU_Shutdown'].isdigit() and int(tags['GPU_Shutdown']) > 0:
+            # If the instance has no GPUs then don't check for idle gpu.
+            instance_details = get_instance_description(instance.instance_type)
+            if 'gpu' not in instance_details or instance_details['gpu'] < 1:
+                continue
+            # Don't shut down if instance has not been up for at least an hour.
+            if int(instance.launch_time.timestamp()) + (60*60) > curtimestamp:
+                continue
+
+            last_use = instance.launch_time.timestamp()
+            if 'GPU_Last_Use' in tags:
+                last_use = tags['GPU_Last_Use']
+            if curtimestamp - last_use > (int(tags['GPU_Shutdown']) * 60):
+                print("Shutting down instance %s" % (instance.instance_id))
+                stop_instance.delay(instance.instance_id)
+                continue
 
 
-
-@celery.task(rate_limit='20/m')
+@celery.task()
 def terminate_instance(instance_id):
     print('Terminating instance %s' % (instance_id,))
     ec2 = get_ec2_client()
     ec2.instances.filter(InstanceIds=[instance_id]).terminate()
 
-@celery.task(rate_limit='20/m')
+@celery.task()
 def tag_instance(instance_id, tag, value):
     ec2 = get_ec2_client()
     ec2.instances.filter(InstanceIds=[instance_id]).create_tags(
@@ -301,6 +328,17 @@ def tag_instance(instance_id, tag, value):
             { 'Key': tag, 'Value': value }
         ]
     )
+
+@celery.task()
+def multi_tag_instance(instance_id, tags):
+    ec2 = get_ec2_client()
+    tagList = []
+    for key in tags:
+        tagList.append({ 'Key': key, 'Value': tags[key] })
+    ec2.instances.filter(InstanceIds=[instance_id]).create_tags(
+        Tags=tagList
+    )
+
 
 @cache.cache()
 def is_owner(instance_id, user):

@@ -139,12 +139,15 @@ def api_instances_status(instance_id):
 @app.route('/api/instances/<instance_id>/stats', methods=['POST'])
 @api_credentials_required
 def api_instances_stats(instance_id):
+    tagList = {}
     if 'gpu_utilization' in request.form and request.form['gpu_utilization'] is not False:
         if float(request.form['gpu_utilization']) > 0:
-            aws.tag_instance.delay(instance_id, 'GPU_Last_Use', str(int(time.time())))
-        aws.tag_instance.delay(instance_id, 'GPU_Utilization', request.form['gpu_utilization'])
+            tagList['GPU_Last_Use'] = str(int(time.time()))
+        tagList['GPU_Utilization'] = request.form['gpu_utilization']
     if 'diskspace_utilization' in request.form and request.form['diskspace_utilization'] is not False:
-        aws.tag_instance.delay(instance_id, 'Diskspace_Utilization', request.form['diskspace_utilization'])
+        tagList['Diskspace_Utilization'] = request.form['diskspace_utilization']
+    if len(tagList) > 0:
+        aws.multi_tag_instance.delay(instance_id, tagList)
     return jsonify({'status': 'ok'})
 
 

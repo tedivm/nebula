@@ -73,6 +73,9 @@ $('input[name=num_instances]').on('change paste keyup', function() {
                 <p><input type=text name="shutdownDate" id="shutdowntime" class="shutdowntime" value=""></p>
                 <input type=hidden name="shutdown" id="shutdowntimestamp" value="">
               </label>
+              <label> GPU Idle Shutdown (optional, time in minutes)
+                <p><input type="number" name="gpuIdleTime" id="gpuidletime" value=""></p>
+              </label>
 
                 <p><input type=submit class='button' value=Launch></p>
             </form>

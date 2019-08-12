@@ -47,8 +47,17 @@
       <div class="large-12 columns">
         <div class="row collapse">
           <div class="small-10 columns">
+            <label for="shutdownTimeSelector">Scheduled Shutdown</label>
             <input type="text" class="" value="" id="shutdownTimeSelector">
           </div>
+        </div>
+        <div class="row collapse">
+          <div class="small-10 columns">
+            <label for="gpuIdleInput">GPU Idle Shutdown</label>
+            <input type="number" class="" value="0" id="gpuIdleInput" type="number">
+          </div>
+        </div>
+        <div class="row collapse">
           <div class="small-2 columns">
             <a href="#" class="button postfix" data-close id="shutdownTimeSubmit">Schedule</a>
           </div>
@@ -179,8 +188,15 @@
                       {% endif %}
 
                       {% if instance_can_stop(server) %}
-                        {% if tags.Shutdown and tags.Shutdown|int %}
-                          <i data-tooltip data-disable-hover="false" id="scheduleShutdownButton_{{ server.instance_id }}" data-instanceid="{{ server.instance_id }}" title='schedule' class="has-tip fa-clock-o fa scheduleshutdown alert" data-shutdowntime={{ tags.Shutdown }}></i>
+                        {% if (tags.Shutdown and tags.Shutdown|int) or (tags.GPU_Shutdown and tags.GPU_Shutdown|int) %}
+                          <i data-tooltip data-disable-hover="false"
+                            id="scheduleShutdownButton_{{ server.instance_id }}"
+                            data-instanceid="{{ server.instance_id }}"
+                            title='schedule'
+                            class="has-tip fa-clock-o fa scheduleshutdown alert"
+                            {% if tags.Shutdown and tags.Shutdown|int %}data-shutdowntime={{ tags.Shutdown }}{% endif %}
+                            {% if tags.GPU_Shutdown and tags.GPU_Shutdown|int %}data-gpushutdowntime={{ tags.GPU_Shutdown }}{% endif %}
+                            ></i>
                         {% else %}
                           <i data-tooltip data-disable-hover="false" id="scheduleShutdownButton_{{ server.instance_id }}" data-instanceid="{{ server.instance_id }}" title='schedule' class="has-tip fa-clock-o fa scheduleshutdown"></i>
                         {% endif %}
