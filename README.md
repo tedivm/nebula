@@ -56,6 +56,11 @@ Nebula admins have the ability to blacklist instances they do not want their use
 Instances can be given a specific shutdown time. This can be used as a failsafe to prevent machines from being left up or to shutdown machines after running experiments or long running tasks.
 
 
+### GPU Idle Shutdowns
+
+If desired instances can automatically be shut down if their GPU has been idle for longer then the specified amount of time. This allows ML Researchers to run longer jobs without having to worry about wasting money should the job fail or finish.
+
+
 ### Transparent Pricing
 
 Both the User and Amin Dashboards contain to the second cost for all running instances and the volumes of every instance. All users can easily sort by cost to see which of their instances have cost the most money.
