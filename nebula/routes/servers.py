@@ -204,6 +204,7 @@ def profile_ami(profile_id):
 def get_server_information(server):
     hourly_price = aws.get_instance_description(server.instance_type)['price']
     tags = aws.get_tags_from_aws_object(server)
+    #print(tags)
     return {
         'ami': server.image_id,
         'launch': server.launch_time,
@@ -220,5 +221,6 @@ def get_server_information(server):
         'shutdown': tags.get('Shutdown', False),
         'gpushutdown': tags.get('GPU_Shutdown', False),
         'name': tags.get('Name', ''),
+        'gpu_utilization': tags.get('GPU_Utilization', -1),
         'state': server.state['Name']
     }

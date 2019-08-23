@@ -19,7 +19,7 @@ postgres:
   host: 'database'
 
 aws:
-  region: 'us-east-1'
+  region: 'us-west-2'
   ebs_optimized: False
   subnets:
     - 'subnet-1fb84b55'
