@@ -554,9 +554,9 @@ function getInstanceInfoTable (instanceData) {
     `
   if(instanceData['gpu_utilization']!=-1){
     //gpu utilization is defined
-    infotable_html = infotable + `<tr><td>GPU Utilization:</td><td>${instanceData['gpu_utilization']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['gpu_utilization']}" title="Copy '${instanceData['gpu_utilization']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>`
+    infotable_html += `<tr><td>GPU Utilization:</td><td>${instanceData['gpu_utilization']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['gpu_utilization']}" title="Copy '${instanceData['gpu_utilization']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>`
   }
-  infotable_html = infotable + `</table>`
+  infotable_html += `</table>`
   return infotable_html
 }
 
