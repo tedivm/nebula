@@ -545,7 +545,7 @@ function getNewRow (server, admin = false) {
 }
 
 function getInstanceInfoTable (instanceData) {
-  let infotable = `<table id='instance_info_${instanceData['instance_id']}' class='unstriped'>
+  let infotable_html = `<table id='instance_info_${instanceData['instance_id']}' class='unstriped'>
     <tr><td>Name:</td><td>${instanceData['name']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['name']}" title="Copy '${instanceData['name']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
     <tr><td>Hourly Price:</td><td>$${instanceData['price']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['price']}" title="Copy '${instanceData['price']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
     <tr><td>Instance ID:</td><td>${instanceData['instance_id']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['instance_id']}" title="Copy '${instanceData['instance_id']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
@@ -554,18 +554,10 @@ function getInstanceInfoTable (instanceData) {
     `
   if(instanceData['gpu_utilization']!=-1){
     //gpu utilization is defined
-    infotable = infotable + `<tr><td>GPU Utilization:</td><td>${instanceData['gpu_utilization']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['gpu_utilization']}" title="Copy '${instanceData['gpu_utilization']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>`
+    infotable_html = infotable + `<tr><td>GPU Utilization:</td><td>${instanceData['gpu_utilization']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['gpu_utilization']}" title="Copy '${instanceData['gpu_utilization']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>`
   }
-  infotable = infotable + `</table>`
-  return infotable
-  // return `<table id='instance_info_${instanceData['instance_id']}' class='unstriped'>
-  //   <tr><td>Name:</td><td>${instanceData['name']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['name']}" title="Copy '${instanceData['name']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
-  //   <tr><td>Hourly Price:</td><td>$${instanceData['price']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['price']}" title="Copy '${instanceData['price']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
-  //   <tr><td>Instance ID:</td><td>${instanceData['instance_id']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['instance_id']}" title="Copy '${instanceData['instance_id']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
-  //   <tr><td>AMI:</td><td>${instanceData['ami']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['ami']}" title="Copy '${instanceData['ami']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
-  //   <tr><td>Profile:</td><td>${instanceData['profile']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['profile']}" title="Copy '${instanceData['profile']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
-  //   <tr><td>GPU Utilization:</td><td>${instanceData['gpu_utilization']} <i data-tooltip data-disable-hover="false" data-clipboard-text="${instanceData['gpu_utilization']}" title="Copy '${instanceData['gpu_utilization']}' to clipboard." class="fa-clipboard fa copy"></i></td></tr>
-  // </table>`
+  infotable_html = infotable + `</table>`
+  return infotable_html
 }
 
 function getControlPanel (server) {
