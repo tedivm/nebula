@@ -140,10 +140,11 @@ def api_instances_status(instance_id):
 @api_credentials_required
 def api_instances_stats(instance_id):
     tagList = {}
-    if 'gpu_utilization' in request.form and request.form['gpu_utilization'] is not False:
-        if float(request.form['gpu_utilization']) > 0:
-            tagList['GPU_Last_Use'] = str(int(time.time()))
-        tagList['GPU_Utilization'] = request.form['gpu_utilization']
+    if 'gpu_utilization' in request.form
+        if request.form['gpu_utilization'] is not False and request.form['gpu_utilization'].isnumeric():
+            if float(request.form['gpu_utilization']) > 0:
+                tagList['GPU_Last_Use'] = str(int(time.time()))
+            tagList['GPU_Utilization'] = request.form['gpu_utilization']
     if 'diskspace_utilization' in request.form and request.form['diskspace_utilization'] is not False:
         tagList['Diskspace_Utilization'] = request.form['diskspace_utilization']
     if len(tagList) > 0:
