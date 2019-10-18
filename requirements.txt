@@ -46,4 +46,4 @@ vine==1.1.4
 webencodings==0.5.1
 websocket==0.2.1
 websocket-client==0.48.0
-Werkzeug==0.14.1
+Werkzeug==0.15.3
