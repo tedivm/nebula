@@ -40,7 +40,7 @@ sqlalchemy-migrate==0.11.0
 sqlparse==0.2.4
 Tempita==0.5.2
 tzlocal==1.5.1
-urllib3==1.23
+urllib3==1.24.2
 uWSGI==2.0.17.1
 vine==1.1.4
 webencodings==0.5.1
