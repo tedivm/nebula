@@ -1,11 +1,12 @@
 FROM tiangolo/uwsgi-nginx-flask:python3.6
 
+RUN /usr/bin/apt-get update; /usr/bin/apt-get install -f -y postgresql-client cron
+
 ADD requirements.txt /app/requirements.txt
 RUN sed '/^uWSGI/ d' < /app/requirements.txt > /app/requirements_filtered.txt
 WORKDIR /app/
 RUN pip install -r requirements_filtered.txt
 
-RUN /usr/bin/apt-get update; /usr/bin/apt-get install -f -y postgresql-client cron
 ADD ./docker/app/crond /etc/cron.d/nebula
 
 ENV STATIC_URL /app/nebula/static

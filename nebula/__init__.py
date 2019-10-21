@@ -26,13 +26,13 @@ def get_secret(secret_name):
         secret = get_secret_value_response['SecretString']
     else:
         secret = get_secret_value_response['SecretBinary'].decode("utf-8")
-    return yaml.load(secret)
+    return yaml.safe_load(secret)
 
 
 if 'SETTINGS' in os.environ:
     if os.path.isfile(os.environ['SETTINGS']):
         with open(os.environ['SETTINGS'], 'r') as stream:
-            app.config.update(yaml.load(stream))
+            app.config.update(yaml.safe_load(stream))
     else:
         print('Unable to open settings file %s' % (os.environ['SETTINGS']))
 
