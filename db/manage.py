@@ -30,12 +30,12 @@ def get_secret(secret_name):
         secret = get_secret_value_response['SecretString']
     else:
         secret = get_secret_value_response['SecretBinary'].decode("utf-8")
-    return yaml.load(secret)
+    return yaml.safe_load(secret)
 
 if 'SETTINGS' in os.environ:
     if os.path.isfile(os.environ['SETTINGS']):
         with open(os.environ['SETTINGS'], 'r') as stream:
-            settings = yaml.load(stream)['postgres']
+            settings = yaml.safe_load(stream)['postgres']
 
 if 'AWS_SECRETS_SETTINGS' in os.environ:
     aws_secret_name = os.environ['AWS_SECRETS_SETTINGS']
