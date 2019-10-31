@@ -71,15 +71,13 @@ if 'LOGDNA_INGESTION_KEY' in os.environ:
     import logging
     from logdna import LogDNAHandler
 
-    log = logging.getLogger('nebula')
-
     logdna_handler = LogDNAHandler(
         os.getenv('LOGDNA_INGESTION_KEY'),
         {'app': 'Nebula', 'include_standard_meta': True})
     log_level = logging.DEBUG if 'DEBUG' in os.environ else logging.INFO
     logdna_handler.setLevel(log_level)
-    log.addHandler(logdna_handler)
-    log.info('added logdna handler..')
+    app.logger.addHandler(logdna_handler)
+    app.logger.info('added logdna handler..')
 
 
 if 'general' not in app.config:
