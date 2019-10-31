@@ -2,7 +2,10 @@ from flask import Flask
 import os
 import requests
 import yaml
+
+
 app = Flask(__name__)
+
 
 def get_secret(secret_name):
     import boto3
@@ -61,6 +64,23 @@ if 'aws_secret_name' in app.config:
     for key, value in aws_secrets.items():
         if key in secret_mapping:
             app.config[secret_mapping[key]][key] = value
+
+
+# if enabled logs will be sent to LogDNA via ingest api.
+if 'LOGDNA_INGESTION_KEY' in os.environ:
+    import logging
+    from logdna import LogDNAHandler
+
+    log = logging.getLogger('nebula')
+
+    logdna_handler = LogDNAHandler(
+        os.getenv('LOGDNA_INGESTION_KEY'),
+        {'app': 'Nebula', 'include_standard_meta': True})
+    log_level = logging.DEBUG if 'DEBUG' in os.environ else logging.INFO
+    logdna_handler.setLevel(log_level)
+    log.addHandler(logdna_handler)
+    log.info('added logdna handler..')
+
 
 if 'general' not in app.config:
     app.config['general'] = {
