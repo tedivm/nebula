@@ -33,3 +33,13 @@ upgrade_dependencies: venv
 clean:
 	rm -rf $(ROOT_DIR)/env;
 	rm -rf $(ROOT_DIR)/nebula/*.pyc;
+
+build_containers:
+	docker build -f dockerfile.app -t tedivm/nebula_app:latest .
+	docker build -f dockerfile.worker -t tedivm/nebula_worker:latest .
+
+publish_containers:
+	docker build --no-cache -f dockerfile.app -t tedivm/nebula_app:latest .
+	docker build --no-cache -f dockerfile.worker -t tedivm/nebula_worker:latest .
+	docker push tedivm/nebula_app:latest
+	docker push tedivm/nebula_worker:latest
