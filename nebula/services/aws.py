@@ -74,8 +74,10 @@ def get_updated_prices():
     prices = {}
     instance_data = get_instance_descriptions()
     for instance_type, data in instance_data.items():
-        if region in data['prices']['Linux']:
-            prices[instance_type] = data['prices']['Linux'][region]['Shared']
+        if 'Linux' in data['prices']:
+            if region in data['prices']['Linux']:
+                if 'Shared' in data['prices']['Linux'][region]:
+                    prices[instance_type] = data['prices']['Linux'][region]['Shared']
     return prices
 
 
