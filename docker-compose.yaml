@@ -12,6 +12,7 @@ services:
       - ./docker/app/uwsgi.ini:/app/uwsgi.ini
       - ./docker/app/prestart.sh:/app/prestart.sh
       - ./docker/app/settings.yaml:/app/settings.yaml
+      - ./db:/app/db
       - ./nebula:/app/nebula
       - ~/.aws/credentials:/home/nebula/.aws/credentials
       - ~/.aws/config:/home/nebula/.aws/config

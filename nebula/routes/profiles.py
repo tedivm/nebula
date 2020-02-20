@@ -13,7 +13,8 @@ def profiles_create():
         owner = request.form.get('owner', None)
         filter = request.form.get('filter', None)
         userdata = request.form.get('userdata', None)
-        profiles.create_profile(name, ami, owner, filter, userdata)
+        tags = request.form.get('tags', None)
+        profiles.create_profile(name, ami, owner, filter, userdata, tags)
         return redirect(url_for('profiles_list'))
     return render_template("profile_form.html", profile={})
 
@@ -29,7 +30,8 @@ def profiles_update(profile_id):
         owner = request.form.get('owner', profile['owner'])
         filter = request.form.get('filter', profile['filter'])
         userdata = request.form.get('userdata', None)
-        profiles.update_profile(profile_id, name, ami, owner, filter, userdata)
+        tags = request.form.get('tags', None)
+        profiles.update_profile(profile_id, name, ami, owner, filter, userdata, tags)
         return redirect(url_for('profiles_list'))
     return render_template("profile_form.html", profile=profile)
 

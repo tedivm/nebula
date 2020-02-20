@@ -83,7 +83,7 @@ def get_updated_prices():
 
 @cache.cache()
 def get_ami_root_size(ami):
-    client = get_ec2_client()
+    client = get_ec2_resource()
     image = client.Image(ami)
     if not image:
         return False
@@ -94,12 +94,19 @@ def get_ami_root_size(ami):
     return False
 
 
+def get_ec2_resource():
+    with app.app_context():
+        conn = getattr(g, '_ec2_resource', None)
+        if conn is None:
+            g._ec2_resource = boto3.resource('ec2', region_name=current_app.config['aws']['region'])
+        return g._ec2_resource
+
 def get_ec2_client():
     with app.app_context():
-        conn = getattr(g, '_ec2', None)
+        conn = getattr(g, '_ec2_client', None)
         if conn is None:
-            g._ec2 = boto3.resource('ec2', region_name=current_app.config['aws']['region'])
-        return g._ec2
+            g._ec2_client = boto3.client('ec2', region_name=current_app.config['aws']['region'])
+        return g._ec2_client
 
 
 def generate_group_id():
@@ -116,7 +123,7 @@ def get_ami_from_profile(profile_id):
             return profile['ami']
 
         client = boto3.client('ec2', region_name=current_app.config['aws']['region'])
-        filters = yaml.load(profile['filter'])
+        filters = yaml.safe_load(profile['filter'])
         if 'owner' in profile:
             response = client.describe_images(Owners=[profile['owner']], Filters=filters)
         else:
@@ -142,7 +149,7 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
     with app.app_context():
         # within this block, current_app points to app.
         profile = profiles.get_profile(profile_id)
-        print('Launching %s for %s with profile "%s"' % (instancetype, owner, profile))
+        print('Launching %s for %s with profile "%s"' % (instancetype, owner, profile_id))
         userdata = profile['userdata']
         ImageID = get_ami_from_profile(profile_id)
 
@@ -181,7 +188,37 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
                 'Arn': current_app.config['aws']['iam_instance_profile']
             }
 
-        ec2 = get_ec2_client()
+        autolive = app.config['aws'].get('auto_live', False)
+        sitetag = app.config['general'].get('site_name', 'nebula')
+        tags = [
+            {'Key': sitetag, 'Value': 'true'},
+            {'Key': 'User', 'Value': owner},
+            {'Key': 'Profile', 'Value': profile['name']},
+            {'Key': 'Group', 'Value': group_id},
+            {'Key': 'Disk_Space', 'Value': str(size)}
+        ]
+
+        if label:
+            tags.append({'Key': 'Label', 'Value': label})
+        if shutdown:
+            tags.append({'Key': 'Shutdown', 'Value': shutdown})
+        if gpuidle:
+            tags.append({'Key': 'GPU_Shutdown', 'Value': gpuidle})
+        if autolive:
+            tags.append({'Key': 'Status', 'Value': 'Live'})
+
+        if profile['tags']:
+            for line in profile['tags'].splitlines():
+                if len(line) > 3 and '=' in line:
+                    tag_name, tag_value = line.split('=', 1)
+                    tags.append({'Key': tag_name, 'Value': tag_value})
+
+        startArgs['TagSpecifications'] = [
+            { 'ResourceType': 'instance', 'Tags': tags},
+            { 'ResourceType': 'volume', 'Tags': tags},
+        ]
+
+        ec2 = get_ec2_resource()
 
         # Attempt on all available subnets
         subnets = current_app.config['aws']['subnets'][:]
@@ -194,7 +231,8 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
                 if len(subnets) < 1:
                     raise e
 
-        # Wait for all machine requests to process so we can tag them.
+
+        # Wait for all machine requests to process so we can tag the network interfaces.
         while True:
             launched = True
             for instance in instances:
@@ -204,35 +242,11 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
                 break
             time.sleep(5)
 
-        autolive = app.config['aws'].get('auto_live', False)
-        sitetag = app.config['general'].get('site_name', 'nebula')
         for instance in instances:
-            print('Cluster start - tag')
-            tags = [
-                {'Key': sitetag, 'Value': 'true'},
-                {'Key': 'User', 'Value': owner},
-                {'Key': 'Profile', 'Value': profile['name']},
-                {'Key': 'Group', 'Value': group_id}
-            ]
-
             # Tag network devices- useful for cost exploration.
             for eni in instance.network_interfaces:
                 print('tagging network interface')
                 eni.create_tags(Tags=tags)
-
-            # Tag attached devices. Volumes initialize slowly so schedule another task.
-            tag_instance_volumes.delay(instance.instance_id, tags)
-
-            tags.append({'Key': 'Disk_Space', 'Value': str(size)})
-            if label:
-                tags.append({'Key': 'Label', 'Value': label})
-            if shutdown:
-                tags.append({'Key': 'Shutdown', 'Value': shutdown})
-            if gpuidle:
-                tags.append({'Key': 'GPU_Shutdown', 'Value': gpuidle})
-            if autolive:
-                tags.append({'Key': 'Status', 'Value': 'Live'})
-            instance.create_tags(Tags=tags)
 
         return True
 
@@ -240,7 +254,7 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
 @celery.task(expires=3600)
 def tag_instance_volumes(instance_id, tags):
     print('Tagging instance volumes %s' % (instance_id,))
-    ec2 = get_ec2_client()
+    ec2 = get_ec2_resource()
     while True:
         instance = ec2.Instance(instance_id)
         if len(instance.block_device_mappings) > 0:
@@ -256,38 +270,50 @@ def tag_instance_volumes(instance_id, tags):
 @celery.task(expires=3600)
 def stop_instance(instance_id):
     print('Stopping instance %s' % (instance_id,))
-    ec2 = get_ec2_client()
+    ec2 = get_ec2_resource()
     ec2.instances.filter(InstanceIds=[instance_id]).stop()
-    tag_instance(instance_id, 'Shutdown', 'false')
+    remove_instance_tag(instance_id, 'Shutdown')
 
 
 @celery.task(expires=300)
 def start_instance(instance_id):
     print('Starting instance %s' % (instance_id,))
-    ec2 = get_ec2_client()
+    ec2 = get_ec2_resource()
     ec2.instances.filter(InstanceIds=[instance_id]).start()
-    tag_instance(instance_id, 'Shutdown', 'false')
+    remove_instance_tag(instance_id, 'Shutdown')
 
 
 @celery.task(expires=300)
 def reboot_instance(instance_id):
     print('Rebooting instance %s' % (instance_id,))
-    ec2 = get_ec2_client()
+    ec2 = get_ec2_resource()
     ec2.instances.filter(InstanceIds=[instance_id]).reboot()
 
 
 @celery.task(expires=300)
 def change_instance_type(instance_id, instance_type):
     print('Changing instance %s\'s instance type to %s' % (instance_id, instance_type))
-    ec2 = get_ec2_client()
+    ec2 = get_ec2_resource()
     ec2.modify_instance_attribute(InstanceId=instance_id, Attribute='instanceType', Value=instance_type)
 
 
 @celery.task(rate_limit='1/m', expires=60)
 def shutdown_expired_instances():
-    instances = get_instance_list(state='running', terminated=False)
+    instance_ids = set([])
+
+    # Get instances with Shutdown tag
+    instances = get_instance_list(state='running', terminated=False, tag_keys=['Shutdown'])
     for instance in instances:
-        shutdown_expired_instance.delay(instance.instance_id)
+        instance_ids.add(instance.instance_id)
+
+    # Get instances with GPU_Shutdown tag
+    instances = get_instance_list(state='running', terminated=False, tag_keys=['GPU_Shutdown'])
+    for instance in instances:
+        instance_ids.add(instance.instance_id)
+
+    # Schedule shutdown check for all relevant instances
+    for instance_id in instance_ids:
+        shutdown_expired_instance.delay(instance_id)
 
 
 @celery.task()
@@ -330,12 +356,12 @@ def shutdown_expired_instance(instance_id):
 @celery.task()
 def terminate_instance(instance_id):
     print('Terminating instance %s' % (instance_id,))
-    ec2 = get_ec2_client()
+    ec2 = get_ec2_resource()
     ec2.instances.filter(InstanceIds=[instance_id]).terminate()
 
 @celery.task()
 def tag_instance(instance_id, tag, value):
-    ec2 = get_ec2_client()
+    ec2 = get_ec2_resource()
     ec2.instances.filter(InstanceIds=[instance_id]).create_tags(
         Tags=[
             { 'Key': tag, 'Value': value }
@@ -344,7 +370,7 @@ def tag_instance(instance_id, tag, value):
 
 @celery.task()
 def multi_tag_instance(instance_id, tags):
-    ec2 = get_ec2_client()
+    ec2 = get_ec2_resource()
     tagList = []
     for key in tags:
         tagList.append({ 'Key': key, 'Value': tags[key] })
@@ -363,15 +389,22 @@ def is_owner(instance_id, user):
 
 
 def get_instance(instance_id):
-    ec2 = get_ec2_client()
+    ec2 = get_ec2_resource()
     return ec2.Instance(instance_id)
 
 
 def get_instance_tags(instance_id):
-    ec2 = get_ec2_client()
+    ec2 = get_ec2_resource()
     instances = ec2.instances.filter(InstanceIds=[instance_id])
     for instance in instances:
         return get_tags_from_aws_object(instance)
+
+
+def remove_instance_tag(instance_id, tag_name):
+    tags = get_instance_tags(instance_id)
+    if tag_name in tags:
+        ec2 = get_ec2_client()
+        ec2.delete_tags(Resources=[instance_id],Tags=[{"Key": tag_name}])
 
 
 def get_tags_from_aws_object(ec2_object):
@@ -383,23 +416,24 @@ def get_tags_from_aws_object(ec2_object):
     return tag_dict
 
 
-def get_instance_list(owner=None, state=False, terminated=True, update_volumes=False):
-    ec2 = get_ec2_client()
+def get_instance_list(owner=None, state=False, terminated=True, update_volumes=False, tag_keys=False):
+    ec2 = get_ec2_resource()
     sitetag = app.config['general'].get('site_name', 'nebula')
     filters = [{'Name': 'tag:%s' % (sitetag,), 'Values': ['true']}]
 
-    if state:
-        if isinstance(state, list):
-            states = state
-        else:
-            states = [state]
-        filters.append({'Name':'instance-state-name', 'Values':states})
+    if tag_keys:
+        for tag_name in tag_keys:
+            filters.append({'Name': 'tag-key', 'Values': [tag_name]})
 
-    if owner:
-        filters.append({'Name':'tag:User', 'Values':[owner]})
-    if not terminated:
+    if state:
+        if isinstance(state, str):
+            state = [state]
+        filters.append({'Name':'instance-state-name', 'Values':state})
+    elif not terminated:
         states = ['pending', 'running', 'shutting-down', 'stopping', 'stopped', 'rebooting']
         filters.append({'Name':'instance-state-name', 'Values':states})
+    if owner:
+        filters.append({'Name':'tag:User', 'Values':[owner]})
 
     # Use optional arg if attached EBS volumes need to be updated when retrieved
     if update_volumes:
@@ -420,7 +454,7 @@ def get_instance_list(owner=None, state=False, terminated=True, update_volumes=F
 
 def get_instances_in_group(group_id):
     """Return a list of instances belonging to the specified group ID."""
-    ec2 = get_ec2_client()
+    ec2 = get_ec2_resource()
     filters = [{ 'Name': 'tag:Group', 'Values': [group_id] }]
     instances = ec2.instances.filter(Filters=filters)
     return list(instances)
