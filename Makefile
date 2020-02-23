@@ -39,7 +39,9 @@ build_containers:
 	docker build -f dockerfile.worker -t tedivm/nebula_worker:latest .
 
 publish_containers:
-	docker build --no-cache -f dockerfile.app -t tedivm/nebula_app:latest .
-	docker build --no-cache -f dockerfile.worker -t tedivm/nebula_worker:latest .
+	docker build --no-cache -f dockerfile.app -t tedivm/nebula_app:latest -t tedivm/nebula_app:v1 .
+	docker build --no-cache -f dockerfile.worker -t tedivm/nebula_worker:latest -t tedivm/nebula_worker:v2 .
 	docker push tedivm/nebula_app:latest
+	docker push tedivm/nebula_app:v1
 	docker push tedivm/nebula_worker:latest
+	docker push tedivm/nebula_worker:v1
