@@ -20,7 +20,7 @@ def server_launch():
         if 'label' in request.form and len(request.form['label']) > 0:
             label = request.form['label']
         shutdown = False
-        if 'shutdown' in request.form and int(request.form['shutdown']) > 0:
+        if 'shutdown' in request.form and request.form['shutdown'] and int(request.form['shutdown']) > 0:
             shutdown = int(request.form['shutdown'])
         gpuidle = False
         if 'gpuIdleTime' in request.form and len(request.form['gpuIdleTime']) > 0:
