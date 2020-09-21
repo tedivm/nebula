@@ -1,4 +1,4 @@
-from flask import Flask, session, redirect, url_for, escape, request, render_template, jsonify, abort
+from flask import Flask, session, redirect, url_for, escape, request, render_template, jsonify, abort, current_app
 from nebula import app
 from nebula.routes.decorators import login_required, admin_required, admin_or_owner_required
 from nebula.routes.helpers import request_wants_json
@@ -29,7 +29,17 @@ def server_launch():
         for _ in range(num_instances):
             aws.launch_instance.delay(group_id, profile_id, instancetype, owner, size, label, shutdown, gpuidle)
         return redirect(url_for('server_list'))
-    profile_list = profiles.list_profiles()
+
+    if current_app.config['aws'].get('use_launch_templates', False):
+        profile_list = []
+        for launch_template in aws.get_launch_templates():
+            profile_list.append({
+                id: launch_template['LaunchTemplateId'],
+                name: launch_template['Tags'].get('NebulaShortName', launch_template['LaunchTemplateName'])
+            })
+    else:
+        profile_list = [{"id":profile["id"], "name":profile["name"]} for profile in profiles.list_profiles()]
+
     return render_template("server_form.html", profiles=profile_list)
 
 
@@ -197,7 +207,10 @@ def ami_image_size(ami_id):
 @app.route('/profiles/<profile_id>/ami.json')
 @login_required
 def profile_ami(profile_id):
-    return jsonify(aws.get_ami_from_profile(profile_id))
+    if current_app.config['aws'].get('use_launch_templates', False):
+        return jsonify(aws.get_ami_from_launch_template(profile_id))
+    else:
+        return jsonify(aws.get_ami_from_profile(profile_id))
 
 
 

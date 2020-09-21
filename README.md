@@ -25,6 +25,8 @@ If you're looking for the documentation look no further than the [Nebula Wiki](h
 
 Admins can create "Profiles" that their users can then launch machines from. These profiles define the AMI and [User Data](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/bootstrap_container_instance.html) that are used by Nebula to launch the individual instances.
 
+As an alternative, admins can use their favorite IaC solution to create Launch Templates that Nebula will automatically pick up and associate as profiles. Nebula does this by utilizing tags, 
+
 
 ### AMI Filters
 
