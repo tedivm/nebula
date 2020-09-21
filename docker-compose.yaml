@@ -16,6 +16,10 @@ services:
       - ./nebula:/app/nebula
       - ~/.aws/credentials:/home/nebula/.aws/credentials
       - ~/.aws/config:/home/nebula/.aws/config
+    environment:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
     depends_on:
       - database
       - rabbitmq
@@ -29,6 +33,10 @@ services:
       - ./nebula:/app/nebula
       - ~/.aws/credentials:/home/nebula/.aws/credentials
       - ~/.aws/config:/home/nebula/.aws/config
+    environment:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
     depends_on:
       - database
       - rabbitmq

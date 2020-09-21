@@ -143,79 +143,191 @@ def get_ami_from_profile(profile_id):
         return latest['ImageId']
 
 
+def get_base_tags(profile_name, owner, group_id, size, label = False, shutdown = False, gpuidle = False):
+    autolive = app.config['aws'].get('auto_live', False)
+    sitetag = app.config['general'].get('site_name', 'nebula')
+    tags = [
+        {'Key': sitetag, 'Value': 'true'},
+        {'Key': 'User', 'Value': owner},
+        {'Key': 'Profile', 'Value': profile_name},
+        {'Key': 'Group', 'Value': group_id},
+        {'Key': 'Disk_Space', 'Value': str(size)}
+    ]
+
+    if label:
+        tags.append({'Key': 'Label', 'Value': label})
+    if shutdown:
+        tags.append({'Key': 'Shutdown', 'Value': shutdown})
+    if gpuidle:
+        tags.append({'Key': 'GPU_Shutdown', 'Value': gpuidle})
+    if autolive:
+        tags.append({'Key': 'Status', 'Value': 'Live'})
+    return tags
+
+
+def get_launch_templates():
+    sitetag = app.config['general'].get('site_name', 'nebula')
+    filters = [{'Name': 'tag:%s' % (sitetag,), 'Values': ['true']}]
+    filters.append({'Name':'tag:NebulaShortName', 'Values':[shortname]})
+
+    client = boto3.client('ec2', region_name=current_app.config['aws']['region'])
+    launch_templates = client.describe_launch_templates(
+        Filters=filters
+    )['LaunchTemplates']
+
+    for template in launch_templates:
+        tags = {}
+        for tagpair in template['Tags']:
+            tags[tagpair['key']] = tagpair['value']
+        template['Tags'] = tags
+    return launch_templates
+
+
+@cache.cache(expire=60)
+def get_launch_template_metadata(launch_template_id):
+    sitetag = app.config['general'].get('site_name', 'nebula')
+    filters = [{'Name': 'tag:%s' % (sitetag,), 'Values': ['true']}]
+    filters.append({'Name':'tag:NebulaShortName', 'Values':[shortname]})
+
+    client = boto3.client('ec2', region_name=current_app.config['aws']['region'])
+    launch_templates = client.describe_launch_templates(
+        LaunchTemplateIds=[launch_template_id],
+        Filters=filters
+    )['LaunchTemplates']
+
+    if len(launch_templates) != 1:
+        # Throw error if launch template doesn't exist or isn't unique
+        return False
+
+    launch_template = launch_templates[0]
+    launch_template_versions = client.describe_launch_template_versions(
+        LaunchTemplateId=launch_template_id,
+        Versions=[
+            launch_template['DefaultVersionNumber']
+        ]
+    )
+
+    if len(launch_template_versions) != 1:
+        # Throw error if launch template version doesn't exist or isn't unique
+        return False
+
+    launch_template_version = launch_template_versions[0]
+    return launch_template_version
+
+
+def get_ami_from_launch_template(launch_template_id):
+    metadata = get_launch_template_metadata(launch_template_id)
+    return metadata['LaunchTemplateData']['ImageId']
+
+
+
+def get_launch_instance_arguments_from_launch_template(launch_template_id, owner, group_id, size, label = False, shutdown = False, gpuidle = False):
+    # Even though we have the launch template id we still do the lookup to validate that it is associated with this nebula instance
+    launch_template_details = get_launch_template_metadata(launch_template_id)
+    metadata = launch_template_details['LaunchTemplateData']
+    startArgs = {
+        'LaunchTemplate': {
+            'LaunchTemplateId': launch_template_details['LaunchTemplateId']
+        }
+    }
+
+    # Merge tags from launch template with the nebula required tags.
+    tags = get_base_tags(launch_template_details['LaunchTemplateId'], owner, group_id, size, label, shutdown, gpuidle)
+    volume_tags = tags.copy()
+    instance_tags = tags.copy()
+
+    # To simplify the logic create a TagSpecifications object if it doesn't exist
+    if 'TagSpecifications' not in metadata:
+        metadata['TagSpecifications'] = []
+
+    existing_instance_tags = [x for x in metadata['TagSpecifications'] if x['ResourceType'] == 'instance']
+    if len(existing_instance_tags) > 0:
+        instance_tags.update(existing_instance_tags[0]["Tags"])
+
+    existing_volume_tags = [x for x in metadata['TagSpecifications'] if x['ResourceType'] == 'volume']
+    if len(existing_volume_tags) > 0:
+        volume_tags.update(existing_volume_tags[0]["Tags"])
+
+    # Create tag specifications without the instance and volume tags
+    startArgs["TagSpecifications"] = [x for x in metadata['TagSpecifications'] if x['ResourceType'] != 'volume' and x['ResourceType'] != 'instance']
+
+    # Add back the instance and volume tags now that they have been merged with the nebula specific ones
+    startArgs["TagSpecifications"].append({ 'ResourceType': 'instance', 'Tags': instance_tags})
+    startArgs["TagSpecifications"].append({ 'ResourceType': 'volume', 'Tags': volume_tags})
+
+    return startArgs
+
+
+def get_launch_instance_arguments_from_profile(profile_id, owner, group_id, size, label = False, shutdown = False, gpuidle = False):
+    # within this block, current_app points to app.
+    profile = profiles.get_profile(profile_id)
+    userdata = profile['userdata']
+    ImageID = get_ami_from_profile(profile_id)
+
+    startArgs = {
+        'DryRun': False,
+        'ImageId': ImageID,
+        'MinCount': 1,
+        'MaxCount': 1,
+        'UserData': userdata,
+        'Monitoring': {
+            'Enabled': True
+        },
+        'DisableApiTermination': False,
+        'InstanceInitiatedShutdownBehavior': 'stop',
+        'EbsOptimized': app.config['aws'].get('ebs_optimized', False),
+    }
+
+    if 'subnets' not in current_app.config['aws']:
+        raise ValueError("SUBNET_ID must be saved in configuration")
+
+    if 'security_group' in current_app.config['aws']:
+        startArgs['SecurityGroupIds'] = [current_app.config['aws']['security_group']]
+
+    if 'iam_instance_profile' in current_app.config['aws']:
+        startArgs['IamInstanceProfile'] = {
+            'Arn': current_app.config['aws']['iam_instance_profile']
+        }
+
+    tags = get_base_tags(profile['name'], owner, group_id, size, label, shutdown, gpuidle)
+
+    if profile['tags']:
+        for line in profile['tags'].splitlines():
+            if len(line) > 3 and '=' in line:
+                tag_name, tag_value = line.split('=', 1)
+                tags.append({'Key': tag_name, 'Value': tag_value})
+
+
+    startArgs['TagSpecifications'] = [
+        { 'ResourceType': 'instance', 'Tags': tags},
+        { 'ResourceType': 'volume', 'Tags': tags},
+    ]
+
+    return startArgs
+
+
+
 @celery.task(expires=300, acks_late=False)
 def launch_instance(group_id, profile_id, instancetype, owner, size=120, label = False, shutdown = False, gpuidle = False):
+    print('Launching %s for %s with profile "%s"' % (instancetype, owner, profile_id))
 
     with app.app_context():
         # within this block, current_app points to app.
-        profile = profiles.get_profile(profile_id)
-        print('Launching %s for %s with profile "%s"' % (instancetype, owner, profile_id))
-        userdata = profile['userdata']
-        ImageID = get_ami_from_profile(profile_id)
 
-        startArgs = {
-            'DryRun': False,
-            'ImageId': ImageID,
-            'MinCount': 1,
-            'MaxCount': 1,
-            'UserData': userdata,
-            'InstanceType': instancetype,
-            'Monitoring': {
-                'Enabled': True
-            },
-            'DisableApiTermination': False,
-            'InstanceInitiatedShutdownBehavior': 'stop',
-            'EbsOptimized': app.config['aws'].get('ebs_optimized', False),
-            'BlockDeviceMappings': [
-                {
-                    'DeviceName': '/dev/sda1',
-                    'Ebs': {
-                        'VolumeSize': size,
-                        'VolumeType': 'gp2'
-                    }
+        if current_app.config['aws'].get('use_launch_templates', False):
+            startArgs = get_launch_instance_arguments_from_launch_template(profile_id, owner, group_id, size, label, shutdown, gpuidle)
+        else:
+            startArgs = get_launch_instance_arguments_from_profile(profile_id, owner, group_id, size, label, shutdown, gpuidle)
+
+        startArgs['InstanceType'] = instancetype
+        startArgs['BlockDeviceMappings'] = [
+            {
+                'DeviceName': '/dev/sda1',
+                'Ebs': {
+                    'VolumeSize': size,
+                    'VolumeType': 'gp2'
                 }
-            ]
-        }
-
-        if 'subnets' not in current_app.config['aws']:
-            raise ValueError("SUBNET_ID must be saved in configuration")
-
-        if 'security_group' in current_app.config['aws']:
-            startArgs['SecurityGroupIds'] = [current_app.config['aws']['security_group']]
-
-        if 'iam_instance_profile' in current_app.config['aws']:
-            startArgs['IamInstanceProfile'] = {
-                'Arn': current_app.config['aws']['iam_instance_profile']
             }
-
-        autolive = app.config['aws'].get('auto_live', False)
-        sitetag = app.config['general'].get('site_name', 'nebula')
-        tags = [
-            {'Key': sitetag, 'Value': 'true'},
-            {'Key': 'User', 'Value': owner},
-            {'Key': 'Profile', 'Value': profile['name']},
-            {'Key': 'Group', 'Value': group_id},
-            {'Key': 'Disk_Space', 'Value': str(size)}
-        ]
-
-        if label:
-            tags.append({'Key': 'Label', 'Value': label})
-        if shutdown:
-            tags.append({'Key': 'Shutdown', 'Value': shutdown})
-        if gpuidle:
-            tags.append({'Key': 'GPU_Shutdown', 'Value': gpuidle})
-        if autolive:
-            tags.append({'Key': 'Status', 'Value': 'Live'})
-
-        if profile['tags']:
-            for line in profile['tags'].splitlines():
-                if len(line) > 3 and '=' in line:
-                    tag_name, tag_value = line.split('=', 1)
-                    tags.append({'Key': tag_name, 'Value': tag_value})
-
-        startArgs['TagSpecifications'] = [
-            { 'ResourceType': 'instance', 'Tags': tags},
-            { 'ResourceType': 'volume', 'Tags': tags},
         ]
 
         ec2 = get_ec2_resource()
@@ -242,11 +354,14 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
                 break
             time.sleep(5)
 
-        for instance in instances:
-            # Tag network devices- useful for cost exploration.
-            for eni in instance.network_interfaces:
-                print('tagging network interface')
-                eni.create_tags(Tags=tags)
+        # Pull out "instance" tags and apply them to the network interface
+        existing_instance_tags = [x for x in startArgs['TagSpecifications'] if x['ResourceType'] == 'instance']
+        if len(existing_instance_tags) > 0:
+            for instance in instances:
+                # Tag network devices- useful for cost exploration.
+                for eni in instance.network_interfaces:
+                    print('tagging network interface')
+                    eni.create_tags(Tags=existing_instance_tags[0]['Tags'])
 
         return True
 
