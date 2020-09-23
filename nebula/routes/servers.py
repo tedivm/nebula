@@ -34,8 +34,8 @@ def server_launch():
         profile_list = []
         for launch_template in aws.get_launch_templates():
             profile_list.append({
-                id: launch_template['LaunchTemplateId'],
-                name: launch_template['Tags'].get('NebulaShortName', launch_template['LaunchTemplateName'])
+                "id": launch_template['LaunchTemplateId'],
+                "name": launch_template['Tags'].get('NebulaShortName', launch_template['LaunchTemplateName'])
             })
     else:
         profile_list = [{"id":profile["id"], "name":profile["name"]} for profile in profiles.list_profiles()]

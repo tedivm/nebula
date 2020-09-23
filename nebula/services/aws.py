@@ -168,7 +168,6 @@ def get_base_tags(profile_name, owner, group_id, size, label = False, shutdown =
 def get_launch_templates():
     sitetag = app.config['general'].get('site_name', 'nebula')
     filters = [{'Name': 'tag:%s' % (sitetag,), 'Values': ['true']}]
-    filters.append({'Name':'tag:NebulaShortName', 'Values':[shortname]})
 
     client = boto3.client('ec2', region_name=current_app.config['aws']['region'])
     launch_templates = client.describe_launch_templates(
@@ -178,7 +177,7 @@ def get_launch_templates():
     for template in launch_templates:
         tags = {}
         for tagpair in template['Tags']:
-            tags[tagpair['key']] = tagpair['value']
+            tags[tagpair['Key']] = tagpair['Value']
         template['Tags'] = tags
     return launch_templates
 
@@ -187,7 +186,6 @@ def get_launch_templates():
 def get_launch_template_metadata(launch_template_id):
     sitetag = app.config['general'].get('site_name', 'nebula')
     filters = [{'Name': 'tag:%s' % (sitetag,), 'Values': ['true']}]
-    filters.append({'Name':'tag:NebulaShortName', 'Values':[shortname]})
 
     client = boto3.client('ec2', region_name=current_app.config['aws']['region'])
     launch_templates = client.describe_launch_templates(
@@ -202,10 +200,8 @@ def get_launch_template_metadata(launch_template_id):
     launch_template = launch_templates[0]
     launch_template_versions = client.describe_launch_template_versions(
         LaunchTemplateId=launch_template_id,
-        Versions=[
-            launch_template['DefaultVersionNumber']
-        ]
-    )
+        Versions=["$Default"]
+    )["LaunchTemplateVersions"]
 
     if len(launch_template_versions) != 1:
         # Throw error if launch template version doesn't exist or isn't unique
@@ -231,6 +227,9 @@ def get_launch_instance_arguments_from_launch_template(launch_template_id, owner
         }
     }
 
+    startArgs['MinCount'] = 1
+    startArgs['MaxCount'] = 1    
+
     # Merge tags from launch template with the nebula required tags.
     tags = get_base_tags(launch_template_details['LaunchTemplateId'], owner, group_id, size, label, shutdown, gpuidle)
     volume_tags = tags.copy()
@@ -242,18 +241,18 @@ def get_launch_instance_arguments_from_launch_template(launch_template_id, owner
 
     existing_instance_tags = [x for x in metadata['TagSpecifications'] if x['ResourceType'] == 'instance']
     if len(existing_instance_tags) > 0:
-        instance_tags.update(existing_instance_tags[0]["Tags"])
+        instance_tags += existing_instance_tags[0]["Tags"]
 
     existing_volume_tags = [x for x in metadata['TagSpecifications'] if x['ResourceType'] == 'volume']
     if len(existing_volume_tags) > 0:
-        volume_tags.update(existing_volume_tags[0]["Tags"])
+        volume_tags += existing_instance_tags[0]["Tags"]
 
     # Create tag specifications without the instance and volume tags
     startArgs["TagSpecifications"] = [x for x in metadata['TagSpecifications'] if x['ResourceType'] != 'volume' and x['ResourceType'] != 'instance']
 
     # Add back the instance and volume tags now that they have been merged with the nebula specific ones
-    startArgs["TagSpecifications"].append({ 'ResourceType': 'instance', 'Tags': instance_tags})
-    startArgs["TagSpecifications"].append({ 'ResourceType': 'volume', 'Tags': volume_tags})
+    startArgs["TagSpecifications"].append({ 'ResourceType': 'instance', 'Tags': clean_dupe_tags(instance_tags)})
+    startArgs["TagSpecifications"].append({ 'ResourceType': 'volume', 'Tags': clean_dupe_tags(volume_tags)})
 
     return startArgs
 
@@ -306,6 +305,9 @@ def get_launch_instance_arguments_from_profile(profile_id, owner, group_id, size
     return startArgs
 
 
+def clean_dupe_tags(tags):
+    return [dict(t) for t in {tuple(d.items()) for d in tags}]
+
 
 @celery.task(expires=300, acks_late=False)
 def launch_instance(group_id, profile_id, instancetype, owner, size=120, label = False, shutdown = False, gpuidle = False):
@@ -329,6 +331,7 @@ def launch_instance(group_id, profile_id, instancetype, owner, size=120, label =
                 }
             }
         ]
+
 
         ec2 = get_ec2_resource()
 
