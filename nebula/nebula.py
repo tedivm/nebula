@@ -33,6 +33,7 @@ if not app.secret_key or app.secret_key is 'CHANGE_THIS_PASSWORD':
 @celery.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(65.0, aws.shutdown_expired_instances.s(), name='AWS Scheduled Shutdowns')
+    sender.add_periodic_task(301, aws.tag_active_instances.s(), name='AWS Active Instance Tags')
     sender.add_periodic_task(
         crontab(hour=4, minute=30),
         notifications.notify_users.s(),

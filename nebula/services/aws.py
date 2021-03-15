@@ -228,7 +228,7 @@ def get_launch_instance_arguments_from_launch_template(launch_template_id, owner
     }
 
     startArgs['MinCount'] = 1
-    startArgs['MaxCount'] = 1    
+    startArgs['MaxCount'] = 1
 
     # Merge tags from launch template with the nebula required tags.
     tags = get_base_tags(launch_template_details['LaunchTemplateId'], owner, group_id, size, label, shutdown, gpuidle)
@@ -413,6 +413,14 @@ def change_instance_type(instance_id, instance_type):
     print('Changing instance %s\'s instance type to %s' % (instance_id, instance_type))
     ec2 = get_ec2_resource()
     ec2.modify_instance_attribute(InstanceId=instance_id, Attribute='instanceType', Value=instance_type)
+
+
+@celery.task(rate_limit='1/m', expires=60)
+def tag_active_instances():
+    curtimestamp = int(datetime.now(pytz.utc).timestamp())
+    instances = get_instance_list(state='running')
+    for instance in instances:
+        tag_instance.delay(instance.instance_id, "LastOnline", curtimestamp)
 
 
 @celery.task(rate_limit='1/m', expires=60)
