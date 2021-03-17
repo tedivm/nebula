@@ -490,7 +490,7 @@ def tag_instance(instance_id, tag, value):
     ec2 = get_ec2_resource()
     ec2.instances.filter(InstanceIds=[instance_id]).create_tags(
         Tags=[
-            { 'Key': tag, 'Value': value }
+            { 'Key': tag, 'Value': str(value) }
         ]
     )
 
