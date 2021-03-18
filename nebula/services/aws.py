@@ -491,10 +491,12 @@ def terminate_expired_instances():
     curtimestamp = int(datetime.now(pytz.utc).timestamp())
     cutoff_timestamp = curtimestamp - (autoterminate*24*60*60)
 
-    instances = get_instance_list(state='stopped', terminated=False, tag_keys=['LastOnline'])
+    instances = get_instance_list(state='stopped', terminated=False, tag_keys=['LastOnline', 'CanTerminate'])
     for instance in instances:
         tags = get_tags_from_aws_object(instance)
         if 'LastOnline' not in tags or not tags['LastOnline'].isdigit():
+            continue
+        if 'CanTerminate' not in tags or tags['CanTerminate'] != "true":
             continue
         last_online = int(tags['LastOnline'])
         if last_online < cutoff_timestamp:
