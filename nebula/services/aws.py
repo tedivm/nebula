@@ -479,6 +479,28 @@ def shutdown_expired_instance(instance_id):
 
 
 
+@celery.task(rate_limit='1/m', expires=60)
+def terminate_expired_instances():
+    print('Processing Autoterminations')
+    with app.app_context():
+        autoterminate = current_app.config['aws'].get('autoterminate_after_stopped', False)
+
+    if not autoterminate or not autoterminate.isdigit():
+        return False
+
+    curtimestamp = int(datetime.now(pytz.utc).timestamp())
+    cutoff_timestamp = curtimestamp - (autoterminate*24*60*60)
+
+    instances = get_instance_list(state='stopped', terminated=False, tag_keys=['LastOnline'])
+    for instance in instances:
+        tags = get_tags_from_aws_object(instance)
+        if 'LastOnline' not in tags or not tags['LastOnline'].isdigit():
+            continue
+        last_online = int(tags['LastOnline'])
+        if last_online < cutoff_timestamp:
+            terminate_instance.delay(instance.instance_id)
+
+
 @celery.task()
 def terminate_instance(instance_id):
     print('Terminating instance %s' % (instance_id,))
